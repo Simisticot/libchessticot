@@ -13,7 +13,7 @@ pub use crate::chess_move::{ChessMove, Move};
 pub use crate::coords::{all_squares, cards, eight_degrees, inter_cards, Coords, Direction};
 pub use crate::engine::{BasicEvaluationPlayer, BetterEvaluationPlayer, FirstMovePlayer};
 #[cfg(feature = "rng")]
-pub use crate::engine::{RandomCapturePrioPlater, RandomPlayer};
+pub use crate::engine::{RandomCapturePrioPlayer, RandomPlayer};
 pub use crate::piece::{Piece, PieceColor, PieceKind};
 pub use crate::player::Player;
 pub use crate::position::Position;

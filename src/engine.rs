@@ -1,5 +1,5 @@
 #[cfg(feature = "rng")]
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::isize;
@@ -82,7 +82,11 @@ impl Player for RandomCapturePrioPlayer {
             })
             .collect();
         if moves_with_capture.len() > 0 {
-            moves_with_capture.choose_mut().unwrap().clone().clone()
+            moves_with_capture
+                .choose(&mut rand::rng())
+                .unwrap()
+                .clone()
+                .clone()
         } else {
             pick_random_move(position)
         }
