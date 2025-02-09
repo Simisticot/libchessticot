@@ -9,8 +9,8 @@ pub struct Piece {
 impl Piece {
     pub fn from_initial_position(x: isize, y: isize) -> Option<Piece> {
         let color = match y {
-            0 | 1 => Some(PieceColor::White),
-            6 | 7 => Some(PieceColor::Black),
+            0 | 1 => Some(PieceColor::Black),
+            6 | 7 => Some(PieceColor::White),
             _ => None,
         };
         let kind = match y {
@@ -73,14 +73,14 @@ impl PieceColor {
     }
     pub fn homerow(&self) -> isize {
         match self {
-            PieceColor::White => 0,
-            PieceColor::Black => 7,
+            PieceColor::White => 7,
+            PieceColor::Black => 0,
         }
     }
     pub fn pawn_orientation(&self) -> isize {
         match self {
-            PieceColor::White => 1,
-            PieceColor::Black => -1,
+            PieceColor::White => -1,
+            PieceColor::Black => 1,
         }
     }
 

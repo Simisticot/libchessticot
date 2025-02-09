@@ -20,12 +20,10 @@ use crate::PieceKind;
 pub struct Position {
     pub board: Vec<Vec<Option<Piece>>>,
     pub to_move: PieceColor,
-    white_king_moved: bool,
-    white_left_rook_moved: bool,
-    white_right_rook_moved: bool,
-    black_king_moved: bool,
-    black_left_rook_moved: bool,
-    black_right_rook_moved: bool,
+    white_can_castle_queen_side: bool,
+    white_can_castle_king_side: bool,
+    black_can_castle_queen_side: bool,
+    black_can_castle_king_side: bool,
     en_passant_on: Option<Coords>,
 }
 
@@ -42,12 +40,10 @@ impl Position {
         Position {
             board,
             to_move: PieceColor::White,
-            white_king_moved: false,
-            white_left_rook_moved: false,
-            white_right_rook_moved: false,
-            black_king_moved: false,
-            black_left_rook_moved: false,
-            black_right_rook_moved: false,
+            white_can_castle_king_side: true,
+            white_can_castle_queen_side: true,
+            black_can_castle_king_side: true,
+            black_can_castle_queen_side: true,
             en_passant_on: None,
         }
     }
@@ -63,12 +59,10 @@ impl Position {
         Position {
             board,
             to_move: PieceColor::White,
-            white_king_moved: false,
-            white_left_rook_moved: false,
-            white_right_rook_moved: false,
-            black_king_moved: false,
-            black_left_rook_moved: false,
-            black_right_rook_moved: false,
+            white_can_castle_king_side: true,
+            white_can_castle_queen_side: true,
+            black_can_castle_king_side: true,
+            black_can_castle_queen_side: true,
             en_passant_on: None,
         }
     }
@@ -78,7 +72,7 @@ impl Position {
         assert!(fields.len() == 6);
 
         let mut board = vec![vec![]; 8];
-        let mut rank = 7;
+        let mut rank = 0;
         fields[0].chars().for_each(|character| match character {
             '1'..='8' => {
                 for _ in 0..character.to_digit(10).expect("matched digits 1 through 8") {
@@ -86,7 +80,7 @@ impl Position {
                 }
             }
             '/' => {
-                rank -= 1;
+                rank += 1;
             }
             'r' => board[rank].push(Some(Piece {
                 kind: PieceKind::Rook,
@@ -171,12 +165,10 @@ impl Position {
             board,
             to_move,
             en_passant_on,
-            white_king_moved: false,
-            black_king_moved: false,
-            white_left_rook_moved: !white_can_castle_left,
-            white_right_rook_moved: !white_can_castle_right,
-            black_left_rook_moved: !black_can_castle_left,
-            black_right_rook_moved: !black_can_castle_right,
+            white_can_castle_queen_side: white_can_castle_left,
+            white_can_castle_king_side: white_can_castle_right,
+            black_can_castle_queen_side: black_can_castle_left,
+            black_can_castle_king_side: black_can_castle_right,
         }
     }
     pub fn opposite_color_to_move(&self) -> Position {
@@ -249,58 +241,77 @@ impl Position {
             }
         }
 
-        let white_left_rook_moved = match chess_move {
-            ChessMove::RegularMove(movement) => {
-                movement.origin == Coords { y: 0, x: 0 } || self.white_left_rook_moved
+        let black_can_castle_king_side = match chess_move {
+            ChessMove::CastleLeft => {
+                self.to_move == PieceColor::White && self.black_can_castle_king_side
             }
-            _ => self.white_left_rook_moved,
-        };
-        let white_right_rook_moved = match chess_move {
-            ChessMove::RegularMove(movement) => {
-                movement.origin == Coords { y: 0, x: 7 } || self.white_right_rook_moved
+            ChessMove::CastleRight => {
+                self.to_move == PieceColor::White && self.black_can_castle_king_side
             }
-            _ => self.white_right_rook_moved,
-        };
-        let black_left_rook_moved = match chess_move {
             ChessMove::RegularMove(movement) => {
-                movement.origin == Coords { y: 7, x: 0 } || self.black_left_rook_moved
+                ((movement.origin != Coords { y: 7, x: 4 }
+                    && movement.origin != Coords { y: 7, x: 7 })
+                    || self.to_move == PieceColor::White)
+                    && self.black_can_castle_king_side
             }
-            _ => self.black_left_rook_moved,
-        };
-        let black_right_rook_moved = match chess_move {
-            ChessMove::RegularMove(movement) => {
-                movement.origin == Coords { y: 7, x: 7 } || self.black_right_rook_moved
-            }
-            _ => self.black_right_rook_moved,
+            _ => self.black_can_castle_king_side,
         };
 
-        let black_king_moved = match chess_move {
-            ChessMove::CastleLeft | ChessMove::CastleRight => self.to_move == PieceColor::Black,
-            ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.origin)
-                .is_some_and(|piece| {
-                    piece.kind == PieceKind::King && piece.color == PieceColor::Black
-                }),
-            _ => self.white_king_moved,
+        let black_can_castle_queen_side = match chess_move {
+            ChessMove::CastleLeft => {
+                self.to_move == PieceColor::White && self.black_can_castle_queen_side
+            }
+            ChessMove::CastleRight => {
+                self.to_move == PieceColor::White && self.black_can_castle_queen_side
+            }
+            ChessMove::RegularMove(movement) => {
+                ((movement.origin != Coords { y: 7, x: 4 }
+                    && movement.origin != Coords { y: 7, x: 0 })
+                    || self.to_move == PieceColor::White)
+                    && self.black_can_castle_queen_side
+            }
+            _ => self.black_can_castle_queen_side,
         };
-        let white_king_moved = match chess_move {
-            ChessMove::CastleLeft | ChessMove::CastleRight => self.to_move == PieceColor::White,
-            ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.origin)
-                .is_some_and(|piece| {
-                    piece.kind == PieceKind::King && piece.color == PieceColor::White
-                }),
-            _ => self.white_king_moved,
+        let white_can_castle_king_side = match chess_move {
+            ChessMove::CastleLeft => {
+                self.to_move == PieceColor::Black && self.white_can_castle_king_side
+            }
+            ChessMove::CastleRight => {
+                self.to_move == PieceColor::Black && self.white_can_castle_king_side
+            }
+            ChessMove::RegularMove(movement) => {
+                ((movement.origin != Coords { y: 7, x: 4 }
+                    && movement.origin != Coords { y: 7, x: 7 })
+                    || self.to_move == PieceColor::Black)
+                    && self.white_can_castle_king_side
+            }
+            _ => self.white_can_castle_king_side,
+        };
+
+        let white_can_castle_queen_side = match chess_move {
+            ChessMove::CastleLeft => {
+                self.to_move == PieceColor::Black && self.white_can_castle_queen_side
+            }
+            ChessMove::CastleRight => {
+                self.to_move == PieceColor::Black && self.white_can_castle_queen_side
+            }
+            ChessMove::RegularMove(movement) => {
+                ((movement.origin != Coords { y: 7, x: 4 }
+                    && movement.origin != Coords { y: 7, x: 0 })
+                    || self.to_move == PieceColor::Black)
+                    && self.white_can_castle_queen_side
+            }
+            _ => self.white_can_castle_queen_side,
         };
 
         Position {
             board: new_board,
             to_move: self.to_move.opposite(),
             en_passant_on,
-            black_king_moved,
-            white_king_moved,
-            black_right_rook_moved,
-            black_left_rook_moved,
-            white_right_rook_moved,
-            white_left_rook_moved,
+            white_can_castle_queen_side,
+            white_can_castle_king_side,
+            black_can_castle_queen_side,
+            black_can_castle_king_side,
             ..self.clone()
         }
     }
@@ -355,10 +366,7 @@ impl Position {
             ChessMove::PawnSkip(movement) => movement.origin,
             ChessMove::EnPassant(movement, _) => movement.origin,
             ChessMove::CastleRight | ChessMove::CastleLeft => {
-                let row = match self.to_move {
-                    PieceColor::White => 0,
-                    PieceColor::Black => 7,
-                };
+                let row = self.to_move.homerow();
                 Coords { y: row, x: 4 }
             }
             ChessMove::Promotion(movement, _) => movement.origin,
@@ -389,24 +397,16 @@ impl Position {
         potential_position.is_in_check(&self.to_move)
     }
 
-    pub fn king_moved(&self, color: &PieceColor) -> &bool {
+    pub fn can_castle_queen_side(&self, color: &PieceColor) -> bool {
         match color {
-            PieceColor::White => &self.white_king_moved,
-            PieceColor::Black => &self.black_king_moved,
+            PieceColor::White => self.white_can_castle_queen_side,
+            PieceColor::Black => self.black_can_castle_queen_side,
         }
     }
-
-    pub fn right_rook_moved(&self, color: &PieceColor) -> &bool {
+    pub fn can_castle_king_side(&self, color: &PieceColor) -> bool {
         match color {
-            PieceColor::White => &self.white_right_rook_moved,
-            PieceColor::Black => &self.black_right_rook_moved,
-        }
-    }
-
-    pub fn left_rook_moved(&self, color: &PieceColor) -> &bool {
-        match color {
-            PieceColor::White => &self.white_left_rook_moved,
-            PieceColor::Black => &self.black_left_rook_moved,
+            PieceColor::White => self.white_can_castle_king_side,
+            PieceColor::Black => self.black_can_castle_king_side,
         }
     }
     fn movement_from_origin(&self, origin: &Coords, piece: Piece) -> Vec<ChessMove> {
@@ -431,7 +431,6 @@ impl Position {
                         color: origin_color.clone(),
                     }
             })
-            && !self.king_moved(origin_color)
             && piece_at(&self.board, &Coords { y: row, x: 7 }).is_some_and(|piece| {
                 piece
                     == Piece {
@@ -439,7 +438,7 @@ impl Position {
                         color: origin_color.clone(),
                     }
             })
-            && !self.right_rook_moved(origin_color)
+            && self.can_castle_king_side(origin_color)
         {
             moves.push(ChessMove::CastleRight);
         }
@@ -453,7 +452,6 @@ impl Position {
                         color: origin_color.clone(),
                     }
             })
-            && !self.king_moved(origin_color)
             && piece_at(&self.board, &Coords { y: row, x: 0 }).is_some_and(|piece| {
                 piece
                     == Piece {
@@ -461,7 +459,7 @@ impl Position {
                         color: origin_color.clone(),
                     }
             })
-            && !self.left_rook_moved(origin_color)
+            && self.can_castle_queen_side(origin_color)
         {
             moves.push(ChessMove::CastleLeft);
         }
@@ -786,16 +784,8 @@ mod tests {
     }
     #[test]
     fn promotion_is_an_attack() {
-        let mut position = Position::empty_board();
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[1][1] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let king_location = Coords { y: 0, x: 0 };
+        let position = Position::from_fen("8/8/8/8/8/8/1p6/K7 w - - 0 1");
+        let king_location = Coords { y: 7, x: 0 };
         position
             .color_to_move(PieceColor::Black)
             .all_possible_moves()
@@ -835,28 +825,20 @@ mod tests {
 
     #[test]
     fn en_passant_left() {
-        let mut position = Position::empty_board();
-        position.board[1][1] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][2] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
+        let position = Position::from_fen("8/8/8/8/2p5/8/1P6/8 w - - 0 1");
         let after_skip = position.after_move(&ChessMove::PawnSkip(Move {
-            origin: Coords { y: 1, x: 1 },
-            destination: Coords { y: 3, x: 1 },
+            origin: Coords { y: 6, x: 1 },
+            destination: Coords { y: 4, x: 1 },
         }));
-        let black_pawn_location = Coords { y: 3, x: 2 };
+        let black_pawn_location = Coords { y: 4, x: 2 };
         let ep = ChessMove::EnPassant(
             Move {
                 origin: black_pawn_location,
-                destination: Coords { y: 2, x: 1 },
+                destination: Coords { y: 5, x: 1 },
             },
-            Coords { y: 3, x: 1 },
+            Coords { y: 4, x: 1 },
         );
-        assert!(after_skip.en_passant_on == Some(Coords { y: 2, x: 1 }));
+        assert_eq!(after_skip.en_passant_on, Some(Coords { y: 5, x: 1 }));
         assert!(after_skip
             .legal_moves_from_origin(&black_pawn_location)
             .contains(&ep));
@@ -865,28 +847,20 @@ mod tests {
 
     #[test]
     fn en_passant_right() {
-        let mut position = Position::empty_board();
-        position.board[1][1] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][0] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
+        let position = Position::from_fen("8/8/8/8/p7/8/1P6/8 w - - 0 1");
         let after_skip = position.after_move(&ChessMove::PawnSkip(Move {
-            origin: Coords { y: 1, x: 1 },
-            destination: Coords { y: 3, x: 1 },
+            origin: Coords { y: 6, x: 1 },
+            destination: Coords { y: 4, x: 1 },
         }));
-        let black_pawn_location = Coords { y: 3, x: 0 };
+        let black_pawn_location = Coords { y: 4, x: 0 };
         let ep = ChessMove::EnPassant(
             Move {
                 origin: black_pawn_location,
-                destination: Coords { y: 2, x: 1 },
+                destination: Coords { y: 5, x: 1 },
             },
-            Coords { y: 3, x: 1 },
+            Coords { y: 4, x: 1 },
         );
-        assert!(after_skip.en_passant_on == Some(Coords { y: 2, x: 1 }));
+        assert!(after_skip.en_passant_on == Some(Coords { y: 5, x: 1 }));
         assert!(after_skip
             .legal_moves_from_origin(&black_pawn_location)
             .contains(&ep));
@@ -909,28 +883,17 @@ mod tests {
 
     #[test]
     fn cant_castle_after_moving_king() {
-        let mut position = Position::empty_board();
-        position.board[0][4] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[0][7] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        let king_initial_location = Coords { y: 0, x: 4 };
-        let one_above = Coords { y: 1, x: 4 };
+        let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+        let king_initial_location = Coords { y: 7, x: 4 };
+        let one_above = Coords { y: 6, x: 4 };
 
         let after_move_up = position.after_move(&ChessMove::RegularMove(Move {
             origin: king_initial_location,
             destination: one_above,
         }));
 
-        assert!(after_move_up.white_king_moved);
+        assert!(!after_move_up.white_can_castle_king_side);
+        assert!(!after_move_up.white_can_castle_queen_side);
         assert!(!after_move_up.is_move_legal(&ChessMove::CastleLeft));
         assert!(!after_move_up.is_move_legal(&ChessMove::CastleRight));
 
@@ -939,30 +902,19 @@ mod tests {
             destination: king_initial_location,
         }));
 
-        assert!(after_move_back.white_king_moved);
+        assert!(!after_move_back.black_can_castle_king_side);
+        assert!(!after_move_back.black_can_castle_queen_side);
         assert!(!after_move_back.is_move_legal(&ChessMove::CastleLeft));
         assert!(!after_move_back.is_move_legal(&ChessMove::CastleRight));
     }
 
     #[test]
     fn cannot_castle_after_moving_rook() {
-        let mut position = Position::empty_board();
-        position.board[0][4] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[0][7] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        let left_rook_initial_location = Coords { y: 0, x: 0 };
-        let left_rook_up_one = Coords { y: 1, x: 0 };
-        let right_rook_initial_location = Coords { y: 0, x: 7 };
-        let right_rook_up_one = Coords { y: 1, x: 7 };
+        let position = Position::from_fen("8/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+        let left_rook_initial_location = Coords { y: 7, x: 0 };
+        let left_rook_up_one = Coords { y: 6, x: 0 };
+        let right_rook_initial_location = Coords { y: 7, x: 7 };
+        let right_rook_up_one = Coords { y: 6, x: 7 };
 
         let moved_left_rook_up_one = position
             .after_move(&ChessMove::RegularMove(Move {
@@ -971,10 +923,58 @@ mod tests {
             }))
             .color_to_move(PieceColor::White);
 
-        assert!(moved_left_rook_up_one.white_left_rook_moved);
-        assert!(!moved_left_rook_up_one.white_right_rook_moved);
+        assert!(!moved_left_rook_up_one.white_can_castle_queen_side);
+        assert!(moved_left_rook_up_one.white_can_castle_king_side);
 
         assert!(!moved_left_rook_up_one.is_move_legal(&ChessMove::CastleLeft));
+        assert!(piece_at(
+            &moved_left_rook_up_one.board,
+            &Coords {
+                y: PieceColor::White.homerow(),
+                x: 5
+            }
+        )
+        .is_none());
+        assert!(piece_at(
+            &moved_left_rook_up_one.board,
+            &Coords {
+                y: PieceColor::White.homerow(),
+                x: 6
+            }
+        )
+        .is_none());
+        assert!(piece_at(
+            &moved_left_rook_up_one.board,
+            &Coords {
+                y: PieceColor::White.homerow(),
+                x: 4
+            }
+        )
+        .is_some_and(|piece| {
+            piece
+                == Piece {
+                    kind: PieceKind::King,
+                    color: PieceColor::White,
+                }
+        }));
+        assert!(piece_at(
+            &moved_left_rook_up_one.board,
+            &Coords {
+                y: PieceColor::White.homerow(),
+                x: 7
+            }
+        )
+        .is_some_and(|piece| {
+            piece
+                == Piece {
+                    kind: PieceKind::Rook,
+                    color: PieceColor::White,
+                }
+        }));
+        assert!(moved_left_rook_up_one.can_castle_king_side(&PieceColor::White));
+        assert!(moved_left_rook_up_one
+            .all_legal_moves()
+            .contains(&ChessMove::CastleRight));
         assert!(moved_left_rook_up_one.is_move_legal(&ChessMove::CastleRight));
 
         let moved_right_rook_up_one = moved_left_rook_up_one
@@ -984,7 +984,7 @@ mod tests {
             }))
             .color_to_move(PieceColor::White);
 
-        assert!(moved_right_rook_up_one.white_right_rook_moved);
+        assert!(!moved_right_rook_up_one.white_can_castle_king_side);
         assert!(!moved_right_rook_up_one.is_move_legal(&ChessMove::CastleRight));
 
         let moved_rooks_back = moved_right_rook_up_one
@@ -997,8 +997,8 @@ mod tests {
                 destination: right_rook_initial_location,
             }));
 
-        assert!(moved_rooks_back.white_right_rook_moved);
-        assert!(moved_rooks_back.white_left_rook_moved);
+        assert!(!moved_rooks_back.white_can_castle_king_side);
+        assert!(!moved_rooks_back.white_can_castle_queen_side);
         assert!(!moved_rooks_back.is_move_legal(&ChessMove::CastleRight));
         assert!(!moved_rooks_back.is_move_legal(&ChessMove::CastleLeft));
     }

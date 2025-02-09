@@ -118,22 +118,18 @@ mod tests {
 
     #[test]
     fn pawn_homerow() {
-        let mut position = Position::empty_board();
-        position.board[1][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        let pawn_location = Coords { y: 1, x: 4 };
+        let position = Position::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
+        let pawn_location = Coords { y: 6, x: 4 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![
                 ChessMove::RegularMove(Move {
                     origin: pawn_location,
-                    destination: Coords { y: 2, x: 4 }
+                    destination: Coords { y: 5, x: 4 }
                 }),
                 ChessMove::PawnSkip(Move {
                     origin: pawn_location,
-                    destination: Coords { y: 3, x: 4 }
+                    destination: Coords { y: 4, x: 4 }
                 })
             ]
         )
@@ -141,40 +137,28 @@ mod tests {
 
     #[test]
     fn pawn_not_homerow() {
-        let mut position = Position::empty_board();
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        let pawn_location = Coords { y: 2, x: 4 };
+        let position = Position::from_fen("8/8/8/8/8/4P3/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 5, x: 4 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![ChessMove::RegularMove(Move {
                 origin: pawn_location,
-                destination: Coords { y: 3, x: 4 }
+                destination: Coords { y: 4, x: 4 }
             })]
         )
     }
 
     #[test]
     fn pawn_not_homerow_with_capture() {
-        let mut position = Position::empty_board();
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][5] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 2, x: 4 };
-        let opposing_pawn_location = Coords { y: 3, x: 5 };
+        let position = Position::from_fen("8/8/8/8/5p2/4P3/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 5, x: 4 };
+        let opposing_pawn_location = Coords { y: 4, x: 5 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![
                 ChessMove::RegularMove(Move {
                     origin: pawn_location,
-                    destination: Coords { y: 3, x: 4 }
+                    destination: Coords { y: 4, x: 4 }
                 }),
                 ChessMove::RegularMove(Move {
                     origin: pawn_location,
@@ -186,62 +170,23 @@ mod tests {
 
     #[test]
     fn pawn_not_homerow_blocked() {
-        let mut position = Position::empty_board();
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 2, x: 4 };
+        let position = Position::from_fen("8/8/8/8/4p3/4P3/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 5, x: 4 };
         assert_eq!(position.legal_moves_from_origin(&pawn_location), vec![])
     }
 
     #[test]
     fn pawn_edge_of_board_horizontal_blocked() {
-        let mut position = Position::empty_board();
-        position.board[2][7] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][7] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        let pawn_location = Coords { y: 2, x: 7 };
-        assert_eq!(position.legal_moves_from_origin(&pawn_location), vec![])
-    }
-
-    #[test]
-    fn pawn_edge_of_board_vertical() {
-        let mut position = Position::empty_board();
-        position.board[7][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        let pawn_location = Coords { y: 7, x: 4 };
+        let position = Position::from_fen("8/8/7P/7P/8/8/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 3, x: 7 };
         assert_eq!(position.legal_moves_from_origin(&pawn_location), vec![])
     }
 
     #[test]
     fn pawn_not_homerow_with_capture_blocked() {
-        let mut position = Position::empty_board();
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        position.board[3][5] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 2, x: 4 };
-        let opposing_pawn_location = Coords { y: 3, x: 5 };
+        let position = Position::from_fen("8/8/8/8/4pp2/4P3/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 5, x: 4 };
+        let opposing_pawn_location = Coords { y: 4, x: 5 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![ChessMove::RegularMove(Move {
@@ -253,56 +198,29 @@ mod tests {
 
     #[test]
     fn pawn_homerow_blocked() {
-        let mut position = Position::empty_board();
-        position.board[1][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 1, x: 4 };
+        let position = Position::from_fen("8/8/8/8/8/4p3/4P3/8 w - - 0 1");
+        let pawn_location = Coords { y: 6, x: 4 };
         assert_eq!(position.legal_moves_from_origin(&pawn_location), vec![])
     }
+
     #[test]
     fn pawn_homerow_second_square_blocked() {
-        let mut position = Position::empty_board();
-        position.board[1][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[3][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 1, x: 4 };
+        let position = Position::from_fen("8/8/8/8/4p3/8/4P3/8 w - - 0 1");
+        let pawn_location = Coords { y: 6, x: 4 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![ChessMove::RegularMove(Move {
                 origin: pawn_location,
-                destination: Coords { y: 2, x: 4 }
+                destination: Coords { y: 5, x: 4 }
             })]
         )
     }
 
     #[test]
     fn pawn_homerow_with_capture_blocked() {
-        let mut position = Position::empty_board();
-        position.board[1][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[2][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        position.board[2][5] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
-        let pawn_location = Coords { y: 1, x: 4 };
-        let capture_location = Coords { y: 2, x: 5 };
+        let position = Position::from_fen("8/8/8/8/8/4pp2/4P3/8 w - - 0 1");
+        let pawn_location = Coords { y: 6, x: 4 };
+        let capture_location = Coords { y: 5, x: 5 };
         assert_eq!(
             position.legal_moves_from_origin(&pawn_location),
             vec![ChessMove::RegularMove(Move {
@@ -703,58 +621,31 @@ mod tests {
 
     #[test]
     fn can_castle_right() {
-        let mut position = Position::empty_board();
-
-        position.board[0][4] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[0][7] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        assert!(
-            piece_at(&position.board, &Coords { y: 0, x: 5 }).is_none()
-                && piece_at(&position.board, &Coords { y: 0, x: 6 }).is_none()
-        );
+        let position = Position::from_fen("8/8/8/8/8/8/8/4K2R w KQ - 0 1");
         assert!(position
-            .legal_moves_from_origin(&Coords { y: 0, x: 4 })
+            .legal_moves_from_origin(&Coords { y: 7, x: 4 })
             .contains(&ChessMove::CastleRight));
         assert!(position.is_move_legal(&ChessMove::CastleRight,))
     }
 
     #[test]
     fn castle_right() {
-        let mut game = Game::empty();
+        let position = Position::from_fen("8/8/8/8/8/8/8/4K2R w KQ - 0 1");
 
-        game.current_position.board[0][4] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        game.current_position.board[0][7] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::White,
-        });
-        game.make_move(&ChessMove::CastleRight);
-        assert!(piece_at(&game.current_position.board, &Coords { y: 0, x: 4 }).is_none());
-        assert!(piece_at(&game.current_position.board, &Coords { y: 0, x: 7 }).is_none());
+        let after_castle_right = position.after_move(&ChessMove::CastleRight);
         assert!(
-            piece_at(&game.current_position.board, &Coords { y: 0, x: 6 }).is_some_and(
-                |piece| piece
-                    == Piece {
-                        kind: PieceKind::King,
-                        color: PieceColor::White
-                    }
-            )
+            piece_at(&after_castle_right.board, &Coords { y: 7, x: 6 }).is_some_and(|piece| piece
+                == Piece {
+                    kind: PieceKind::King,
+                    color: PieceColor::White
+                })
         );
         assert!(
-            piece_at(&game.current_position.board, &Coords { y: 0, x: 5 }).is_some_and(
-                |piece| piece
-                    == Piece {
-                        kind: PieceKind::Rook,
-                        color: PieceColor::White
-                    }
-            )
+            piece_at(&after_castle_right.board, &Coords { y: 7, x: 5 }).is_some_and(|piece| piece
+                == Piece {
+                    kind: PieceKind::Rook,
+                    color: PieceColor::White
+                })
         );
     }
 
@@ -785,35 +676,35 @@ mod tests {
         let mut game = Game::start();
 
         game.make_move(&ChessMove::PawnSkip(Move {
-            origin: Coords { x: 4, y: 1 },
-            destination: Coords { x: 4, y: 3 },
-        }));
-        assert!(game.current_position.to_move == PieceColor::Black);
-        game.make_move(&ChessMove::PawnSkip(Move {
             origin: Coords { x: 4, y: 6 },
             destination: Coords { x: 4, y: 4 },
         }));
+        assert!(game.current_position.to_move == PieceColor::Black);
+        game.make_move(&ChessMove::PawnSkip(Move {
+            origin: Coords { x: 4, y: 1 },
+            destination: Coords { x: 4, y: 3 },
+        }));
         game.make_move(&ChessMove::RegularMove(Move {
-            origin: Coords { x: 3, y: 0 },
-            destination: Coords { x: 7, y: 4 },
+            origin: Coords { x: 3, y: 7 },
+            destination: Coords { x: 7, y: 3 },
         }));
         assert!(game.current_position.to_move == PieceColor::Black);
         game.make_move(&ChessMove::RegularMove(Move {
-            origin: Coords { x: 1, y: 7 },
-            destination: Coords { x: 2, y: 5 },
+            origin: Coords { x: 1, y: 0 },
+            destination: Coords { x: 2, y: 2 },
         }));
         game.make_move(&ChessMove::RegularMove(Move {
-            origin: Coords { x: 5, y: 0 },
-            destination: Coords { x: 2, y: 3 },
+            origin: Coords { x: 5, y: 7 },
+            destination: Coords { x: 2, y: 4 },
         }));
         assert!(game.current_position.to_move == PieceColor::Black);
         game.make_move(&ChessMove::RegularMove(Move {
-            origin: Coords { x: 6, y: 7 },
-            destination: Coords { x: 5, y: 5 },
+            origin: Coords { x: 6, y: 0 },
+            destination: Coords { x: 5, y: 2 },
         }));
         game.make_move(&ChessMove::RegularMove(Move {
-            origin: Coords { x: 7, y: 4 },
-            destination: Coords { x: 5, y: 6 },
+            origin: Coords { x: 7, y: 3 },
+            destination: Coords { x: 5, y: 1 },
         }));
         assert!(game.current_position.to_move == PieceColor::Black);
 
@@ -824,23 +715,18 @@ mod tests {
     fn pawn_skip_is_legal() {
         let position = Position::initial();
         assert!(position.is_move_legal(&ChessMove::PawnSkip(Move {
-            origin: Coords { x: 4, y: 1 },
-            destination: Coords { x: 4, y: 3 }
+            origin: Coords { x: 4, y: 6 },
+            destination: Coords { x: 4, y: 4 }
         }),))
     }
 
     #[test]
     fn promotion() {
-        let mut position = Position::empty_board();
-        position.board[6][0] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        let pawn_position = Coords { y: 6, x: 0 };
-        dbg!(position.legal_moves_from_origin(&pawn_position));
-        assert_eq!(PieceColor::White.opposite().homerow(), 7 as isize);
+        let position = Position::from_fen("8/P7/8/8/8/8/8/8 w - - 0 1");
+        let pawn_location = Coords { y: 1, x: 0 };
+        dbg!(position.legal_moves_from_origin(&pawn_location));
         position
-            .legal_moves_from_origin(&pawn_position)
+            .legal_moves_from_origin(&pawn_location)
             .iter()
             .for_each(|chess_move| match chess_move {
                 ChessMove::Promotion(_, _) => (),
