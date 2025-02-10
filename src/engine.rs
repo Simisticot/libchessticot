@@ -1,10 +1,12 @@
 #[cfg(feature = "rng")]
 use rand::prelude::IndexedRandom;
+use std::cmp;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::isize;
 
 use crate::all_squares;
+use crate::chess_move;
 use crate::piece_at;
 use crate::player::Player;
 use crate::ChessMove;
@@ -242,4 +244,59 @@ fn better_evaluation(position: &Position) -> isize {
         .expect("all squares is never 0 length");
     let score_from_checkmate = if position.is_checkmate() { 10000000 } else { 0 };
     score_from_all_squares + score_from_checkmate
+}
+
+fn minimax(
+    position: &Position,
+    depth: isize,
+    maximize: bool,
+    evaluate: fn(position: &Position) -> isize,
+) -> isize {
+    if depth == 0 || position.is_checkmate() || position.is_stalemate() {
+        return evaluate(position);
+    }
+    if maximize {
+        let mut best = isize::min_value();
+        for chess_move in position.all_legal_moves() {
+            best = cmp::max(
+                best,
+                minimax(
+                    &position.after_move(&chess_move),
+                    depth - 1,
+                    false,
+                    evaluate,
+                ),
+            );
+        }
+        best
+    } else {
+        let mut worst = isize::max_value();
+        for chess_move in position.all_legal_moves() {
+            worst = cmp::min(
+                worst,
+                minimax(&position.after_move(&chess_move), depth - 1, true, evaluate),
+            );
+        }
+        worst
+    }
+}
+
+fn myminimax(position: &Position) -> isize {
+    minimax(position, 2, true, better_evaluation)
+}
+pub struct Planner;
+
+impl Player for Planner {
+    fn evalutate(&self, position: &Position) -> isize {
+        myminimax(position)
+    }
+    fn offer_move(&self, position: &Position) -> ChessMove {
+        first_move_with_max_evaluation(moves_with_evaluation(position, myminimax))
+    }
+}
+
+impl Display for Planner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Planner")
+    }
 }

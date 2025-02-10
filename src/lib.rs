@@ -11,7 +11,7 @@ use core::panic;
 pub use crate::board_manip::{move_piece, piece_at, put_piece_at, take_piece_at};
 pub use crate::chess_move::{ChessMove, Move};
 pub use crate::coords::{all_squares, cards, eight_degrees, inter_cards, Coords, Direction};
-pub use crate::engine::{BasicEvaluationPlayer, BetterEvaluationPlayer, FirstMovePlayer};
+pub use crate::engine::{BasicEvaluationPlayer, BetterEvaluationPlayer, FirstMovePlayer, Planner};
 #[cfg(feature = "rng")]
 pub use crate::engine::{RandomCapturePrioPlayer, RandomPlayer};
 pub use crate::piece::{Piece, PieceColor, PieceKind};
