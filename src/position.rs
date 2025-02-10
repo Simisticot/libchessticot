@@ -439,6 +439,7 @@ impl Position {
                     }
             })
             && self.can_castle_king_side(origin_color)
+            && !self.is_in_check(origin_color)
         {
             moves.push(ChessMove::CastleRight);
         }
@@ -460,6 +461,7 @@ impl Position {
                     }
             })
             && self.can_castle_queen_side(origin_color)
+            && !self.is_in_check(origin_color)
         {
             moves.push(ChessMove::CastleLeft);
         }
@@ -1020,5 +1022,16 @@ mod tests {
         });
 
         assert!(position.is_stalemate());
+    }
+
+    #[test]
+    fn cannot_castle_queenside_while_in_check() {
+        let position = Position::from_fen("8/8/8/8/8/8/2n5/R3K3 w Q - 0 1");
+        assert!(!position.is_move_legal(&ChessMove::CastleLeft));
+    }
+    #[test]
+    fn cannot_castle_kingside_while_in_check() {
+        let position = Position::from_fen("8/8/8/8/8/8/2n5/4K2R w K - 0 1");
+        assert!(!position.is_move_legal(&ChessMove::CastleRight));
     }
 }
