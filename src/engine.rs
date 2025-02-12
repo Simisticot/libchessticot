@@ -6,7 +6,6 @@ use std::fmt::Display;
 use std::isize;
 
 use crate::all_squares;
-use crate::chess_move;
 use crate::piece_at;
 use crate::player::Player;
 use crate::ChessMove;

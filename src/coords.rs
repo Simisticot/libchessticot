@@ -30,13 +30,13 @@ impl Coords {
             _ => panic!("algebraic file should be a through h"),
         };
 
-        let y = square
+        let y = (square
             .chars()
             .nth(1)
             .expect("algebraic coordinates should be 2 characters long (asserted above)")
             .to_digit(10)
-            .expect("algebraic rank should be a digit from 1 to 8")
-            - 1;
+            .expect("algebraic rank should be a digit from 1 to 8"))
+        .abs_diff(8);
 
         assert!(y <= 7);
 
@@ -111,6 +111,6 @@ mod tests {
 
     #[test]
     fn coord_from_algebraic() {
-        assert_eq!(Coords { x: 4, y: 3 }, Coords::from_algebraic("e4"));
+        assert_eq!(Coords { x: 4, y: 4 }, Coords::from_algebraic("e4"));
     }
 }
