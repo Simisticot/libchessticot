@@ -312,7 +312,6 @@ impl Position {
             white_can_castle_king_side,
             black_can_castle_queen_side,
             black_can_castle_king_side,
-            ..self.clone()
         }
     }
     pub fn is_checkmate(&self) -> bool {
