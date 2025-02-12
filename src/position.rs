@@ -375,17 +375,85 @@ impl Position {
         self.legal_moves_from_origin(&origin).contains(chess_move)
     }
     pub fn is_attacked_by(&self, by: &PieceColor, square: &Coords) -> bool {
-        self.color_to_move(by.clone())
-            .all_possible_moves()
+        let attacked_by_king: bool =
+            self.projected_movement(square, eight_degrees(), &by.opposite(), Some(1))
+                .iter()
+                .any(|chess_move| match chess_move {
+                    ChessMove::RegularMove(movement) => {
+                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
+                            piece.kind == PieceKind::King && &piece.color == by
+                        })
+                    }
+                    _ => false,
+                });
+        let attacked_by_rook_or_queen: bool =
+            self.rook_from(square, &by.opposite())
+                .iter()
+                .any(|chess_move| match chess_move {
+                    ChessMove::RegularMove(movement) => {
+                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
+                            (piece.kind == PieceKind::Rook || piece.kind == PieceKind::Queen)
+                                && &piece.color == by
+                        })
+                    }
+                    _ => false,
+                });
+
+        let attacked_by_bishop_or_queen: bool = self
+            .bishop_from(square, &by.opposite())
             .iter()
-            .map(|chess_move| match chess_move {
-                ChessMove::RegularMove(movement) => &movement.destination == square,
-                ChessMove::Promotion(movement, _) => &movement.destination == square,
-                ChessMove::EnPassant(_, taken) => taken == square,
+            .any(|chess_move| match chess_move {
+                ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.destination)
+                    .is_some_and(|piece| {
+                        (piece.kind == PieceKind::Bishop || piece.kind == PieceKind::Queen)
+                            && &piece.color == by
+                    }),
                 _ => false,
-            })
-            .any(|attacks_square| attacks_square)
+            });
+        let attacked_by_knight: bool =
+            self.knight_from(square, &by.opposite())
+                .iter()
+                .any(|chess_move| match chess_move {
+                    ChessMove::RegularMove(movement) => {
+                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
+                            piece.kind == PieceKind::Knight && &piece.color == by
+                        })
+                    }
+                    _ => false,
+                });
+
+        let attacked_by_pawn: bool = self.attacked_by_pawn(square, by);
+        let attacked_en_passant: bool = piece_at(&self.board, square)
+            .is_some_and(|piece| piece.color == by.opposite() && piece.kind == PieceKind::Pawn)
+            && self.en_passant_on.is_some_and(|en_passant_on| {
+                en_passant_on
+                    == *square
+                        + Direction {
+                            dx: 0,
+                            dy: by.pawn_orientation(),
+                        }
+                    && self.attacked_by_pawn(&en_passant_on, by)
+            });
+
+        attacked_by_knight
+            || attacked_by_pawn
+            || attacked_en_passant
+            || attacked_by_bishop_or_queen
+            || attacked_by_rook_or_queen
+            || attacked_by_king
     }
+
+    fn attacked_by_pawn(&self, square: &Coords, attacking_color: &PieceColor) -> bool {
+        Position::pawn_attacked_squares(square, &attacking_color.opposite())
+            .iter()
+            .any(|attacking_square| {
+                attacking_square.is_in_bounds()
+                    && piece_at(&self.board, &attacking_square).is_some_and(|piece| {
+                        piece.kind == PieceKind::Pawn && &piece.color == attacking_color
+                    })
+            })
+    }
+
     fn is_in_check(&self, color: &PieceColor) -> bool {
         match self.king_location(color) {
             None => false,
@@ -506,6 +574,20 @@ impl Position {
     fn rook_from(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
         self.projected_movement(origin, cards(), color, None)
     }
+
+    fn pawn_attacked_squares(origin: &Coords, color: &PieceColor) -> Vec<Coords> {
+        vec![
+            Coords {
+                x: origin.x + 1,
+                y: origin.y + color.pawn_orientation(),
+            },
+            Coords {
+                x: origin.x - 1,
+                y: origin.y + color.pawn_orientation(),
+            },
+        ]
+    }
+
     fn pawn_from(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
         let mut legal_moves = vec![];
         let forward = Direction {
@@ -535,32 +617,23 @@ impl Position {
             }
         }
 
-        vec![
-            Coords {
-                x: origin.x + 1,
-                y: origin.y + color.pawn_orientation(),
-            },
-            Coords {
-                x: origin.x - 1,
-                y: origin.y + color.pawn_orientation(),
-            },
-        ]
-        .iter()
-        .for_each(|diagonal| {
-            if diagonal.is_in_bounds() {
-                match piece_at(&self.board, &diagonal) {
-                    None => {}
-                    Some(piece) => {
-                        if piece.color == color.opposite() {
-                            legal_moves.push(ChessMove::RegularMove(Move {
-                                origin: origin.clone(),
-                                destination: *diagonal,
-                            }));
+        Position::pawn_attacked_squares(origin, color)
+            .iter()
+            .for_each(|diagonal| {
+                if diagonal.is_in_bounds() {
+                    match piece_at(&self.board, &diagonal) {
+                        None => {}
+                        Some(piece) => {
+                            if piece.color == color.opposite() {
+                                legal_moves.push(ChessMove::RegularMove(Move {
+                                    origin: origin.clone(),
+                                    destination: *diagonal,
+                                }));
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
         if let Some(en_passant) = self.en_passant_from(origin, color) {
             legal_moves.push(en_passant);
         }
@@ -770,20 +843,75 @@ mod tests {
     }
 
     #[test]
-    fn detects_attacked() {
-        let mut position = Position::empty_board();
-
-        position.board[0][1] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[2][2] = Some(Piece {
-            kind: PieceKind::Knight,
-            color: PieceColor::Black,
-        });
-        let king_location = Coords { y: 0, x: 1 };
-        assert!(position.is_attacked_by(&PieceColor::Black, &king_location,));
+    fn detects_knight_attack() {
+        let position = Position::from_fen("8/8/8/8/8/1n6/8/K7 b - - 0 1");
+        let king_location = Coords { y: 7, x: 0 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
     }
+
+    #[test]
+    fn detects_pawn_attack() {
+        let position = Position::from_fen("8/8/8/4p3/3K4/8/8/8 w - - 0 1");
+        let king_location = Coords { y: 4, x: 3 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
+    }
+
+    #[test]
+    fn en_passant_attack_requires_pawn_present() {
+        let position = Position::from_fen("8/8/8/8/4P3/8/8/8 b - e3 0 1");
+        let pawn_location = Coords { y: 4, x: 4 };
+        assert!(!position.is_attacked_by(&PieceColor::Black, &pawn_location));
+    }
+
+    #[test]
+    fn detects_en_passant_attack() {
+        let position = Position::from_fen("8/8/8/8/4Pp2/8/8/8 b - e3 0 1");
+        let pawn_location = Coords { y: 4, x: 4 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &pawn_location));
+    }
+
+    #[test]
+    fn detects_bishop_attack() {
+        let position = Position::from_fen("8/7b/8/8/8/8/2K5/8 w - - 0 1");
+        let king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
+    }
+
+    #[test]
+    fn detects_diagonal_queen_attack() {
+        let position = Position::from_fen("8/7q/8/8/8/8/2K5/8 w - - 0 1");
+        let king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
+    }
+
+    #[test]
+    fn detects_rook_attack() {
+        let position = Position::from_fen("2r5/8/8/8/8/8/2K5/8 w - - 0 1");
+        let king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
+    }
+
+    #[test]
+    fn detects_cardinal_queen_attack() {
+        let position = Position::from_fen("2q5/8/8/8/8/8/2K5/8 w - - 0 1");
+        let king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &king_location));
+    }
+
+    #[test]
+    fn detects_cardinal_king_attack() {
+        let position = Position::from_fen("8/8/8/8/8/2k5/2K5/8 w - - 0 1");
+        let white_king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &white_king_location));
+    }
+
+    #[test]
+    fn detects_diagonal_king_attack() {
+        let position = Position::from_fen("8/8/8/8/8/3k4/2K5/8 w - - 0 1");
+        let white_king_location = Coords { y: 6, x: 2 };
+        assert!(position.is_attacked_by(&PieceColor::Black, &white_king_location));
+    }
+
     #[test]
     fn promotion_is_an_attack() {
         let position = Position::from_fen("8/8/8/8/8/8/1p6/K7 w - - 0 1");
