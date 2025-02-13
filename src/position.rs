@@ -195,7 +195,7 @@ impl Position {
                 move_piece(&mut new_board, movement.origin, movement.destination);
                 en_passant_on = Some(Coords {
                     x: movement.origin.x,
-                    y: (movement.origin.y + movement.destination.y) / 2 as isize,
+                    y: (movement.origin.y + movement.destination.y) / 2_isize,
                 });
             }
             ChessMove::CastleLeft => {
@@ -234,7 +234,7 @@ impl Position {
                     &mut new_board,
                     Piece {
                         kind: *promoted_to,
-                        color: self.to_move.clone(),
+                        color: self.to_move,
                     },
                     movement.destination,
                 );
@@ -315,7 +315,7 @@ impl Position {
         }
     }
     pub fn is_checkmate(&self) -> bool {
-        return self.is_in_check(&self.to_move) && self.all_legal_moves().len() == 0;
+        self.is_in_check(&self.to_move) && self.all_legal_moves().is_empty()
     }
     pub fn checkmated(&self) -> Option<PieceColor> {
         if self.is_checkmate() {
@@ -327,23 +327,21 @@ impl Position {
     pub fn all_legal_moves(&self) -> Vec<ChessMove> {
         all_squares()
             .iter()
-            .map(|square| self.legal_moves_from_origin(square))
-            .flatten()
+            .flat_map(|square| self.legal_moves_from_origin(square))
             .collect()
     }
 
     fn all_possible_moves(&self) -> Vec<ChessMove> {
         all_squares()
             .iter()
-            .map(|square| self.possible_moves_from_origin(square))
-            .flatten()
+            .flat_map(|square| self.possible_moves_from_origin(square))
             .collect()
     }
     pub fn legal_moves_from_origin(&self, origin: &Coords) -> Vec<ChessMove> {
         self.possible_moves_from_origin(origin)
             .iter()
-            .cloned()
             .filter(|chess_move| !self.opens_own_king(chess_move))
+            .cloned()
             .collect()
     }
 
@@ -447,7 +445,7 @@ impl Position {
             .iter()
             .any(|attacking_square| {
                 attacking_square.is_in_bounds()
-                    && piece_at(&self.board, &attacking_square).is_some_and(|piece| {
+                    && piece_at(&self.board, attacking_square).is_some_and(|piece| {
                         piece.kind == PieceKind::Pawn && &piece.color == attacking_color
                     })
             })
@@ -495,14 +493,14 @@ impl Position {
                 piece
                     == Piece {
                         kind: PieceKind::King,
-                        color: origin_color.clone(),
+                        color: *origin_color,
                     }
             })
             && piece_at(&self.board, &Coords { y: row, x: 7 }).is_some_and(|piece| {
                 piece
                     == Piece {
                         kind: PieceKind::Rook,
-                        color: origin_color.clone(),
+                        color: *origin_color,
                     }
             })
             && self.can_castle_king_side(origin_color)
@@ -517,14 +515,14 @@ impl Position {
                 piece
                     == Piece {
                         kind: PieceKind::King,
-                        color: origin_color.clone(),
+                        color: *origin_color,
                     }
             })
             && piece_at(&self.board, &Coords { y: row, x: 0 }).is_some_and(|piece| {
                 piece
                     == Piece {
                         kind: PieceKind::Rook,
-                        color: origin_color.clone(),
+                        color: *origin_color,
                     }
             })
             && self.can_castle_queen_side(origin_color)
@@ -554,7 +552,7 @@ impl Position {
         ];
         let potential_moves = directions.iter().map(|direction| {
             ChessMove::RegularMove(Move {
-                origin: origin.clone(),
+                origin: *origin,
                 destination: *origin + *direction,
             })
         });
@@ -602,7 +600,7 @@ impl Position {
 
         if piece_at(&self.board, &ahead_one).is_none() {
             legal_moves.push(ChessMove::RegularMove(Move {
-                origin: origin.clone(),
+                origin: *origin,
                 destination: ahead_one,
             }));
             if ahead_two.is_in_bounds()
@@ -610,7 +608,7 @@ impl Position {
                 && piece_at(&self.board, &ahead_two).is_none()
             {
                 legal_moves.push(ChessMove::PawnSkip(Move {
-                    origin: origin.clone(),
+                    origin: *origin,
                     destination: ahead_two,
                 }));
             }
@@ -620,12 +618,12 @@ impl Position {
             .iter()
             .for_each(|diagonal| {
                 if diagonal.is_in_bounds() {
-                    match piece_at(&self.board, &diagonal) {
+                    match piece_at(&self.board, diagonal) {
                         None => {}
                         Some(piece) => {
                             if piece.color == color.opposite() {
                                 legal_moves.push(ChessMove::RegularMove(Move {
-                                    origin: origin.clone(),
+                                    origin: *origin,
                                     destination: *diagonal,
                                 }));
                             }
@@ -638,12 +636,12 @@ impl Position {
         }
         legal_moves
             .iter()
-            .map(|pawn_move| match pawn_move {
+            .flat_map(|pawn_move| match pawn_move {
                 ChessMove::RegularMove(movement) => {
                     if movement.destination.y == color.opposite().homerow() {
                         PieceKind::promoteable()
                             .map(|promotable_kind| {
-                                ChessMove::Promotion(movement.clone(), promotable_kind.clone())
+                                ChessMove::Promotion(movement.clone(), *promotable_kind)
                             })
                             .collect()
                     } else {
@@ -654,14 +652,13 @@ impl Position {
                 ChessMove::EnPassant(_, _) => vec![pawn_move.clone()],
                 _ => panic!("Pawn moves should only be regular, skip or en passant"),
             })
-            .flatten()
             .collect()
     }
     fn en_passant_from(&self, origin: &Coords, color: &PieceColor) -> Option<ChessMove> {
         match self.en_passant_on {
             None => None,
             Some(coordinates) => {
-                for candidate in vec![
+                for candidate in [
                     coordinates
                         + Direction {
                             dx: 1,
@@ -676,8 +673,8 @@ impl Position {
                     if candidate.is_in_bounds() && candidate == *origin {
                         return Some(ChessMove::EnPassant(
                             Move {
-                                origin: origin.clone(),
-                                destination: coordinates.clone(),
+                                origin: *origin,
+                                destination: coordinates,
                             },
                             coordinates
                                 + Direction {
@@ -713,11 +710,10 @@ impl Position {
     ) -> Vec<ChessMove> {
         directions
             .iter()
-            .map(|dir| self.raycast(origin, dir, origin_color, limit))
-            .flatten()
+            .flat_map(|dir| self.raycast(origin, dir, origin_color, limit))
             .map(|destination| {
                 ChessMove::RegularMove(Move {
-                    origin: origin.clone(),
+                    origin: *origin,
                     destination,
                 })
             })
@@ -758,7 +754,7 @@ impl Position {
     }
 
     pub fn is_stalemate(&self) -> bool {
-        self.all_legal_moves().len() == 0 && !self.is_in_check(&self.to_move)
+        self.all_legal_moves().is_empty() && !self.is_in_check(&self.to_move)
     }
 }
 
@@ -802,7 +798,7 @@ mod tests {
             origin: king_location,
             destination: king_destination,
         }));
-        assert!(new_position.king_location(&PieceColor::White) == Some(king_destination.clone()));
+        assert!(new_position.king_location(&PieceColor::White) == Some(king_destination));
         assert!(new_position.is_attacked_by(&PieceColor::Black, &king_destination,));
         assert!(new_position.is_in_check(&PieceColor::White));
     }

@@ -3,7 +3,6 @@ use rand::prelude::IndexedRandom;
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::isize;
 
 use crate::all_squares;
 use crate::piece_at;
@@ -23,7 +22,7 @@ impl Display for FirstMovePlayer {
 }
 impl Player for FirstMovePlayer {
     fn offer_move(&self, position: &Position) -> ChessMove {
-        position.all_legal_moves().iter().next().unwrap().clone()
+        position.all_legal_moves().first().unwrap().clone()
     }
     fn evalutate(&self, _position: &Position) -> isize {
         0
@@ -121,7 +120,7 @@ fn basic_evaluation(position: &Position) -> isize {
     all_squares()
         .iter()
         .map(|square| match piece_at(&position.board, square) {
-            None => 0 as isize,
+            None => 0_isize,
             Some(piece) => evaluate_piece(
                 &piece,
                 position.is_attacked_by(&position.to_move.opposite(), square),
@@ -160,8 +159,7 @@ fn first_move_with_max_evaluation(
     moves_by_evaluation
         .get(moves_by_evaluation.keys().max().unwrap())
         .unwrap()
-        .iter()
-        .next()
+        .first()
         .unwrap()
         .clone()
 }
@@ -226,7 +224,7 @@ fn better_evaluation(position: &Position) -> isize {
     let score_from_all_squares = all_squares()
         .iter()
         .map(|square| match piece_at(&position.board, square) {
-            None => 0 as isize,
+            None => 0_isize,
             Some(piece) => evaluate_piece(
                 &piece,
                 position.is_attacked_by(&piece.color.opposite(), square),
@@ -255,7 +253,7 @@ fn minimax(
         return evaluate(position);
     }
     if maximize {
-        let mut best = isize::min_value();
+        let mut best = isize::MIN;
         for chess_move in position.all_legal_moves() {
             best = cmp::max(
                 best,
@@ -269,7 +267,7 @@ fn minimax(
         }
         best
     } else {
-        let mut worst = isize::max_value();
+        let mut worst = isize::MAX;
         for chess_move in position.all_legal_moves() {
             worst = cmp::min(
                 worst,
