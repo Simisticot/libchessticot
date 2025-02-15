@@ -243,6 +243,20 @@ fn better_evaluation(position: &Position) -> isize {
     score_from_all_squares + score_from_checkmate
 }
 
+fn negamax(position: &Position, depth: isize, evaluate: fn(&Position) -> isize) -> isize {
+    if depth == 0 || position.is_checkmate() || position.is_stalemate() {
+        return evaluate(position);
+    }
+    let mut best = isize::MIN;
+    for chess_move in position.all_legal_moves() {
+        best = cmp::max(
+            best,
+            -negamax(&position.after_move(&chess_move), depth - 1, evaluate),
+        );
+    }
+    best
+}
+
 fn minimax(
     position: &Position,
     depth: isize,
@@ -278,17 +292,17 @@ fn minimax(
     }
 }
 
-fn myminimax(position: &Position) -> isize {
-    minimax(position, 2, true, better_evaluation)
+fn planner_evaluation(position: &Position) -> isize {
+    negamax(position, 2, better_evaluation)
 }
 pub struct Planner;
 
 impl Player for Planner {
     fn evalutate(&self, position: &Position) -> isize {
-        myminimax(position)
+        planner_evaluation(position)
     }
     fn offer_move(&self, position: &Position) -> ChessMove {
-        first_move_with_max_evaluation(moves_with_evaluation(position, myminimax))
+        first_move_with_max_evaluation(moves_with_evaluation(position, planner_evaluation))
     }
 }
 
