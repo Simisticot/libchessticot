@@ -34,6 +34,35 @@ impl Piece {
             })
         }
     }
+
+    pub fn to_fen_char(&self) -> char {
+        match self.kind {
+            PieceKind::Pawn => match self.color {
+                PieceColor::White => 'P',
+                PieceColor::Black => 'p',
+            },
+            PieceKind::Rook => match self.color {
+                PieceColor::White => 'R',
+                PieceColor::Black => 'r',
+            },
+            PieceKind::Knight => match self.color {
+                PieceColor::White => 'N',
+                PieceColor::Black => 'n',
+            },
+            PieceKind::Bishop => match self.color {
+                PieceColor::White => 'B',
+                PieceColor::Black => 'b',
+            },
+            PieceKind::Queen => match self.color {
+                PieceColor::White => 'Q',
+                PieceColor::Black => 'q',
+            },
+            PieceKind::King => match self.color {
+                PieceColor::White => 'K',
+                PieceColor::Black => 'k',
+            },
+        }
+    }
 }
 
 #[derive(Hash, Copy, Clone, PartialEq, Eq, Debug)]

@@ -171,6 +171,74 @@ impl Position {
             black_can_castle_king_side: black_can_castle_right,
         }
     }
+
+    pub fn to_fen(&self) -> String {
+        let mut fen = String::new();
+        self.board.iter().for_each(|rank| {
+            rank.iter()
+                .for_each(|square_contents| match square_contents {
+                    None => match fen.chars().last() {
+                        None => fen.push('1'),
+                        Some(character) => match character {
+                            '/' => fen.push('1'),
+                            '1'..='7' => {
+                                fen.pop();
+                                fen.push_str(
+                                    &(character.to_digit(10).expect("matched digits 1 through 7")
+                                        + 1)
+                                    .to_string(),
+                                );
+                            }
+                            _ => panic!("more than 8 empty squares in rank!"),
+                        },
+                    },
+                    Some(piece) => fen.push(piece.to_fen_char()),
+                });
+            fen.push('/');
+        });
+        fen.pop();
+        fen.push(' ');
+
+        match self.to_move {
+            PieceColor::White => fen.push('w'),
+            PieceColor::Black => fen.push('b'),
+        }
+        fen.push(' ');
+
+        if !self.white_can_castle_king_side
+            && !self.white_can_castle_queen_side
+            && !self.black_can_castle_king_side
+            && !self.black_can_castle_queen_side
+        {
+            fen.push('-');
+        } else {
+            if self.white_can_castle_king_side {
+                fen.push('K');
+            }
+            if self.white_can_castle_queen_side {
+                fen.push('Q');
+            }
+            if self.black_can_castle_king_side {
+                fen.push('k');
+            }
+            if self.black_can_castle_queen_side {
+                fen.push('q');
+            }
+        }
+        fen.push(' ');
+
+        match self.en_passant_on {
+            None => fen.push('-'),
+            Some(square) => fen.push_str(&square.to_algebraic()),
+        }
+        fen.push(' ');
+        fen.push('0');
+        fen.push(' ');
+        fen.push('1');
+
+        fen
+    }
+
     pub fn opposite_color_to_move(&self) -> Position {
         let mut new_position = self.clone();
         new_position.to_move = new_position.to_move.opposite();
@@ -769,6 +837,17 @@ mod tests {
             Position::initial(),
             Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         );
+    }
+
+    #[test]
+    fn initial_position_from_and_to_fen() {
+        let fen_string =
+            Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").to_fen();
+        dbg!(&fen_string);
+        assert_eq!(
+            fen_string,
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        )
     }
 
     #[test]

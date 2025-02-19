@@ -11,6 +11,24 @@ impl Coords {
         self.x < 8 && self.x >= 0 && self.y < 8 && self.y >= 0
     }
 
+    pub fn to_algebraic(&self) -> String {
+        let file = match self.x {
+            0 => "a",
+            1 => "b",
+            2 => "c",
+            3 => "d",
+            4 => "e",
+            5 => "f",
+            6 => "g",
+            7 => "h",
+            _ => panic!("file out of bounds"),
+        };
+        let rank = self.y.abs_diff(8).to_string();
+        let mut algebraic = String::new();
+        algebraic.push_str(&file);
+        algebraic.push_str(&rank);
+        algebraic
+    }
     pub fn from_algebraic(square: &str) -> Coords {
         assert!(square.len() == 2);
 
@@ -119,5 +137,9 @@ mod tests {
     #[test]
     fn coord_from_algebraic() {
         assert_eq!(Coords { x: 4, y: 4 }, Coords::from_algebraic("e4"));
+    }
+    #[test]
+    fn coords_to_algebraic() {
+        assert_eq!("e4", Coords { x: 4, y: 4 }.to_algebraic());
     }
 }
