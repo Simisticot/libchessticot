@@ -3,6 +3,7 @@ use rand::prelude::IndexedRandom;
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::isize;
 
 use crate::all_squares;
 use crate::piece_at;
@@ -164,6 +165,17 @@ fn first_move_with_max_evaluation(
         .clone()
 }
 
+fn first_move_with_min_evaluation(
+    moves_by_evaluation: HashMap<isize, Vec<ChessMove>>,
+) -> ChessMove {
+    moves_by_evaluation
+        .get(moves_by_evaluation.keys().min().unwrap())
+        .unwrap()
+        .first()
+        .unwrap()
+        .clone()
+}
+
 impl Player for BasicEvaluationPlayer {
     fn offer_move(&self, position: &Position) -> ChessMove {
         first_move_with_max_evaluation(moves_with_evaluation(position, basic_evaluation))
@@ -177,10 +189,10 @@ pub struct BetterEvaluationPlayer {}
 
 impl Player for BetterEvaluationPlayer {
     fn offer_move(&self, position: &Position) -> ChessMove {
-        first_move_with_max_evaluation(moves_with_evaluation(position, better_evaluation))
+        first_move_with_min_evaluation(moves_with_evaluation(position, better_evaluation))
     }
     fn evalutate(&self, position: &Position) -> isize {
-        better_evaluation(position)
+        -better_evaluation(position)
     }
 }
 
@@ -209,7 +221,7 @@ fn better_evaluation(position: &Position) -> isize {
     ) -> isize {
         let value = piece_value(&piece.kind);
         let control_value = 2;
-        let own_color_factor = if &piece.color == to_move { -1 } else { 1 };
+        let own_color_factor = if &piece.color == to_move { 1 } else { -1 };
         let attacked_factor = if is_attacked {
             if &piece.color == to_move {
                 -5
@@ -241,6 +253,40 @@ fn better_evaluation(position: &Position) -> isize {
         .expect("all squares is never 0 length");
     let score_from_checkmate = if position.is_checkmate() { 10000000 } else { 0 };
     score_from_all_squares + score_from_checkmate
+}
+
+fn alpha_beta_negamax(
+    position: &Position,
+    depth: isize,
+    evaluate: fn(position: &Position) -> isize,
+    mut alpha: isize,
+    beta: isize,
+    negate_evaluation: isize,
+) -> isize {
+    if depth == 0 || position.is_checkmate() || position.is_stalemate() {
+        return evaluate(position) * negate_evaluation;
+    }
+    let mut best = isize::MIN;
+    for chess_move in position.all_legal_moves() {
+        let eval = alpha_beta_negamax(
+            &position.after_move(&chess_move),
+            depth - 1,
+            evaluate,
+            -beta,
+            -alpha,
+            -negate_evaluation,
+        );
+        if eval > best {
+            best = eval;
+            if eval > alpha {
+                alpha = eval;
+            }
+            if eval >= beta {
+                return best;
+            }
+        }
+    }
+    best
 }
 
 fn negamax(position: &Position, depth: isize, evaluate: fn(&Position) -> isize) -> isize {
@@ -293,7 +339,14 @@ fn minimax(
 }
 
 fn planner_evaluation(position: &Position) -> isize {
-    negamax(position, 2, better_evaluation)
+    alpha_beta_negamax(
+        position,
+        2,
+        better_evaluation,
+        isize::MIN + 1,
+        isize::MAX - 1,
+        -1,
+    )
 }
 pub struct Planner;
 
