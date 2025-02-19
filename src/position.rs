@@ -180,7 +180,8 @@ impl Position {
                     None => match fen.chars().last() {
                         None => fen.push('1'),
                         Some(character) => match character {
-                            '/' => fen.push('1'),
+                            '/' | 'p' | 'P' | 'n' | 'N' | 'r' | 'R' | 'b' | 'B' | 'q' | 'Q'
+                            | 'k' | 'K' => fen.push('1'),
                             '1'..='7' => {
                                 fen.pop();
                                 fen.push_str(
@@ -189,7 +190,7 @@ impl Position {
                                     .to_string(),
                                 );
                             }
-                            _ => panic!("more than 8 empty squares in rank!"),
+                            _ => panic!("more than 8 empty squares in rank! {:?}", rank),
                         },
                     },
                     Some(piece) => fen.push(piece.to_fen_char()),

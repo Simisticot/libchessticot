@@ -261,20 +261,18 @@ fn alpha_beta_negamax(
     evaluate: fn(position: &Position) -> isize,
     mut alpha: isize,
     beta: isize,
-    negate_evaluation: isize,
 ) -> isize {
     if depth == 0 || position.is_checkmate() || position.is_stalemate() {
-        return evaluate(position) * negate_evaluation;
+        return evaluate(position);
     }
     let mut best = isize::MIN;
     for chess_move in position.all_legal_moves() {
-        let eval = alpha_beta_negamax(
+        let eval = -alpha_beta_negamax(
             &position.after_move(&chess_move),
             depth - 1,
             evaluate,
             -beta,
             -alpha,
-            -negate_evaluation,
         );
         if eval > best {
             best = eval;
@@ -339,13 +337,12 @@ fn minimax(
 }
 
 fn planner_evaluation(position: &Position) -> isize {
-    alpha_beta_negamax(
+    -alpha_beta_negamax(
         position,
         2,
         better_evaluation,
         isize::MIN + 1,
         isize::MAX - 1,
-        -1,
     )
 }
 pub struct Planner;
@@ -362,5 +359,64 @@ impl Player for Planner {
 impl Display for Planner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Planner")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Coords;
+    use crate::Move;
+
+    use super::*;
+    #[test]
+    fn better_evaluation_finds_king_rook_fork() {
+        let position =
+            Position::from_fen("rnb1kbnr/pppppppp/8/1N6/8/8/PPPPPPPP/R1BQKBNR w KQkq - 0 1");
+        assert_eq!(
+            BetterEvaluationPlayer {}.offer_move(&position),
+            ChessMove::RegularMove(Move {
+                origin: Coords { x: 1, y: 3 },
+                destination: Coords { x: 2, y: 1 }
+            })
+        );
+    }
+
+    #[test]
+    fn better_evaluation_doesnt_sac_knight_after_fork() {
+        let position =
+            Position::from_fen("Nnbk1bnr/pp1p1ppp/8/4p3/8/8/PPPPPPPP/R1BQKBNR w KQka - 0 1");
+        assert_ne!(
+            BetterEvaluationPlayer {}.offer_move(&position),
+            ChessMove::RegularMove(Move {
+                origin: Coords { x: 0, y: 0 },
+                destination: Coords { x: 2, y: 1 }
+            })
+        );
+    }
+
+    #[test]
+    fn planner_doesnt_sac_knight_after_fork() {
+        let position =
+            Position::from_fen("Nnbk1bnr/pp1p1ppp/8/4p3/8/8/PPPPPPPP/R1BQKBNR w KQka - 0 1");
+        assert_ne!(
+            Planner {}.offer_move(&position),
+            ChessMove::RegularMove(Move {
+                origin: Coords { x: 0, y: 0 },
+                destination: Coords { x: 2, y: 1 }
+            })
+        );
+    }
+
+    #[test]
+    fn planner_finds_king_rook_fork() {
+        let position =
+            Position::from_fen("rnb1kbnr/pppppppp/8/1N6/8/8/PPPPPPPP/R1BQKBNR w KQkq - 0 1");
+        assert_eq!(
+            Planner {}.offer_move(&position),
+            ChessMove::RegularMove(Move {
+                origin: Coords { x: 1, y: 3 },
+                destination: Coords { x: 2, y: 1 }
+            })
+        );
     }
 }
