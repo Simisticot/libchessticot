@@ -3,7 +3,6 @@ use rand::prelude::IndexedRandom;
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::isize;
 
 use crate::all_squares;
 use crate::piece_at;
