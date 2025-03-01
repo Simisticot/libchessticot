@@ -1,6 +1,5 @@
 #[cfg(feature = "rng")]
 use rand::prelude::IndexedRandom;
-use std::cmp;
 use std::collections::HashMap;
 use std::fmt::Display;
 
@@ -286,54 +285,6 @@ fn alpha_beta_negamax(
     best
 }
 
-fn negamax(position: &Position, depth: isize, evaluate: fn(&Position) -> isize) -> isize {
-    if depth == 0 || position.is_checkmate() || position.is_stalemate() {
-        return evaluate(position);
-    }
-    let mut best = isize::MIN;
-    for chess_move in position.all_legal_moves() {
-        best = cmp::max(
-            best,
-            -negamax(&position.after_move(&chess_move), depth - 1, evaluate),
-        );
-    }
-    best
-}
-
-fn minimax(
-    position: &Position,
-    depth: isize,
-    maximize: bool,
-    evaluate: fn(position: &Position) -> isize,
-) -> isize {
-    if depth == 0 || position.is_checkmate() || position.is_stalemate() {
-        return evaluate(position);
-    }
-    if maximize {
-        let mut best = isize::MIN;
-        for chess_move in position.all_legal_moves() {
-            best = cmp::max(
-                best,
-                minimax(
-                    &position.after_move(&chess_move),
-                    depth - 1,
-                    false,
-                    evaluate,
-                ),
-            );
-        }
-        best
-    } else {
-        let mut worst = isize::MAX;
-        for chess_move in position.all_legal_moves() {
-            worst = cmp::min(
-                worst,
-                minimax(&position.after_move(&chess_move), depth - 1, true, evaluate),
-            );
-        }
-        worst
-    }
-}
 
 fn planner_evaluation(position: &Position) -> isize {
     -alpha_beta_negamax(
