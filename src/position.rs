@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::str;
 
 use crate::all_squares;
@@ -16,7 +17,7 @@ use crate::Piece;
 use crate::PieceColor;
 use crate::PieceKind;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Position {
     pub board: Vec<Vec<Option<Piece>>>,
     pub to_move: PieceColor,
@@ -25,6 +26,12 @@ pub struct Position {
     black_can_castle_queen_side: bool,
     black_can_castle_king_side: bool,
     pub en_passant_on: Option<Coords>,
+}
+
+impl Debug for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_fen())
+    }
 }
 
 impl Position {
