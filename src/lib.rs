@@ -5,6 +5,7 @@ mod engine;
 mod piece;
 mod player;
 mod position;
+mod uci_long;
 
 use core::panic;
 

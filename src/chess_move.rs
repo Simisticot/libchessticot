@@ -16,3 +16,16 @@ pub struct Move {
     pub origin: Coords,
     pub destination: Coords,
 }
+
+impl Move {
+    pub fn x_distance(&self) -> isize {
+        self.origin.x - self.destination.x
+    }
+
+    pub fn y_abs_distance(&self) -> usize {
+        self.origin.y.abs_diff(self.destination.y)
+    }
+    pub fn x_abs_distance(&self) -> usize {
+        self.origin.x.abs_diff(self.destination.x)
+    }
+}

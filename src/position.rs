@@ -24,7 +24,7 @@ pub struct Position {
     white_can_castle_king_side: bool,
     black_can_castle_queen_side: bool,
     black_can_castle_king_side: bool,
-    en_passant_on: Option<Coords>,
+    pub en_passant_on: Option<Coords>,
 }
 
 impl Position {
@@ -441,17 +441,14 @@ impl Position {
         self.legal_moves_from_origin(&origin).contains(chess_move)
     }
     pub fn is_attacked_by(&self, by: &PieceColor, square: &Coords) -> bool {
-        let attacked_by_king: bool =
-            self.projected_movement(square, eight_degrees(), &by.opposite(), Some(1))
-                .iter()
-                .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => {
-                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
-                            piece.kind == PieceKind::King && &piece.color == by
-                        })
-                    }
-                    _ => false,
-                });
+        let attacked_by_king: bool = self
+            .projected_movement(square, eight_degrees(), &by.opposite(), Some(1))
+            .iter()
+            .any(|chess_move| match chess_move {
+                ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.destination)
+                    .is_some_and(|piece| piece.kind == PieceKind::King && &piece.color == by),
+                _ => false,
+            });
         let attacked_by_rook_or_queen: bool =
             self.rook_from(square, &by.opposite())
                 .iter()
