@@ -1,9 +1,36 @@
 use crate::{
     board_manip::{king_at, pawn_at},
-    ChessMove, Coords, Direction, Move, PieceKind, Position,
+    ChessMove, Coords, Direction, Move, PieceColor, PieceKind, Position,
 };
 
 impl ChessMove {
+    pub fn to_uci_long(&self, current_position: &Position) -> String {
+        let origin: Coords = match self {
+            ChessMove::RegularMove(movement)
+            | ChessMove::PawnSkip(movement)
+            | ChessMove::Promotion(movement, _)
+            | ChessMove::EnPassant(movement, _) => movement.origin,
+            ChessMove::CastleLeft | ChessMove::CastleRight => match current_position.to_move {
+                PieceColor::Black => Coords::from_algebraic("e8"),
+                PieceColor::White => Coords::from_algebraic("e1"),
+            },
+        };
+        let destination: Coords = match self {
+            ChessMove::RegularMove(movement)
+            | ChessMove::PawnSkip(movement)
+            | ChessMove::Promotion(movement, _)
+            | ChessMove::EnPassant(movement, _) => movement.destination,
+            ChessMove::CastleLeft => match current_position.to_move {
+                PieceColor::Black => Coords::from_algebraic("c8"),
+                PieceColor::White => Coords::from_algebraic("c1"),
+            },
+            ChessMove::CastleRight => match current_position.to_move {
+                PieceColor::Black => Coords::from_algebraic("g8"),
+                PieceColor::White => Coords::from_algebraic("g1"),
+            },
+        };
+        origin.to_algebraic() + &destination.to_algebraic()
+    }
     pub fn from_uci_long(uci_long: &str, current_position: &Position) -> ChessMove {
         assert!(uci_long.len() >= 4);
         assert!(uci_long.len() <= 5);
@@ -131,6 +158,30 @@ mod tests {
                 origin: Coords::from_algebraic("b1"),
                 destination: Coords::from_algebraic("c3")
             })
+        )
+    }
+
+    #[test]
+    fn serializes_e4() {
+        assert_eq!(
+            ChessMove::PawnSkip(Move {
+                origin: Coords::from_algebraic("e2"),
+                destination: Coords::from_algebraic("e4")
+            })
+            .to_uci_long(&Position::initial()),
+            "e2e4"
+        )
+    }
+
+    #[test]
+    fn serializes_e5() {
+        assert_eq!(
+            ChessMove::PawnSkip(Move {
+                origin: Coords::from_algebraic("e7"),
+                destination: Coords::from_algebraic("e5")
+            })
+            .to_uci_long(&Position::initial()),
+            "e7e5"
         )
     }
 }
