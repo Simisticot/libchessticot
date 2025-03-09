@@ -407,7 +407,7 @@ impl Position {
             .collect()
     }
 
-    fn all_possible_moves(&self) -> Vec<ChessMove> {
+    pub fn all_possible_moves(&self) -> Vec<ChessMove> {
         all_squares()
             .iter()
             .flat_map(|square| self.possible_moves_from_origin(square))
