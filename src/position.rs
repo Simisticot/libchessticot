@@ -829,6 +829,17 @@ impl Position {
     pub fn is_stalemate(&self) -> bool {
         self.all_legal_moves().is_empty() && !self.is_in_check(&self.to_move)
     }
+
+    pub fn perft(&self, depth: usize) -> usize {
+        if depth == 0 {
+            self.all_legal_moves().len()
+        } else {
+            self.all_legal_moves()
+                .iter()
+                .map(|chess_move| self.after_move(chess_move).perft(depth - 1))
+                .sum()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -1240,5 +1251,10 @@ mod tests {
     fn cannot_castle_kingside_while_in_check() {
         let position = Position::from_fen("8/8/8/8/8/8/2n5/4K2R w K - 0 1");
         assert!(!position.is_move_legal(&ChessMove::CastleRight));
+    }
+
+    #[test]
+    fn perft_3_is_197281() {
+        assert_eq!(Position::initial().perft(3), 197281)
     }
 }
