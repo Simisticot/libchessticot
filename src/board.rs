@@ -44,7 +44,7 @@ impl Board {
             }
             content.push(row);
         }
-        return Board { content };
+        Board { content }
     }
 
     pub fn empty() -> Board {
@@ -156,5 +156,98 @@ impl Board {
         });
         fen.pop();
         fen
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::all_squares;
+
+    use super::*;
+
+    #[test]
+    fn empty_board_is_empty() {
+        let board = Board::empty();
+        all_squares()
+            .iter()
+            .for_each(|square| assert!(board.piece_at(square).is_none()));
+    }
+
+    #[test]
+    fn piece_is_where_i_put_it() {
+        let mut board = Board::empty();
+        board.put_piece_at(
+            Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            },
+            Coords::from_algebraic("e4"),
+        );
+        assert!(
+            board
+                .piece_at(&Coords::from_algebraic("e4"))
+                .is_some_and(
+                    |piece| piece.kind == PieceKind::Pawn && piece.color == PieceColor::White
+                )
+        );
+    }
+
+    #[test]
+    fn taking_a_piece_removes_the_piece() {
+        let mut board = Board::empty();
+
+        board.put_piece_at(
+            Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            },
+            Coords::from_algebraic("e4"),
+        );
+
+        board.take_piece_at(Coords::from_algebraic("e4"));
+
+        assert!(board.piece_at(&Coords::from_algebraic("e4")).is_none());
+    }
+
+    #[test]
+    fn taking_a_piece_returns_the_piece() {
+        let mut board = Board::empty();
+
+        board.put_piece_at(
+            Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            },
+            Coords::from_algebraic("e4"),
+        );
+
+        assert!(
+            board
+                .take_piece_at(Coords::from_algebraic("e4"))
+                .is_some_and(
+                    |piece| piece.kind == PieceKind::Pawn && piece.color == PieceColor::White
+                )
+        );
+    }
+
+    #[test]
+    fn piece_is_where_i_moved_it_not_where_i_moved_it_from() {
+        let mut board = Board::empty();
+        board.put_piece_at(
+            Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            },
+            Coords::from_algebraic("e4"),
+        );
+        board.move_piece(Coords::from_algebraic("e4"), Coords::from_algebraic("a8"));
+        assert!(board.piece_at(&Coords::from_algebraic("e4")).is_none());
+        assert!(
+            board
+                .piece_at(&Coords::from_algebraic("a8"))
+                .is_some_and(
+                    |piece| piece.kind == PieceKind::Pawn && piece.color == PieceColor::White
+                )
+        );
     }
 }
