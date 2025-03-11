@@ -765,6 +765,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn initial_position_to_fen() {
+        assert_eq!(
+            Position::initial().to_fen(),
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        );
+    }
+
+    #[test]
     fn initial_position_from_fen() {
         assert_eq!(
             Position::initial(),

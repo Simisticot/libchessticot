@@ -11,6 +11,13 @@ impl Coords {
         (self.x + self.y * 8).try_into().unwrap()
     }
 
+    pub fn from_square_number(square_number: usize) -> Coords {
+        Coords {
+            x: square_number as isize % 8,
+            y: square_number as isize / 8,
+        }
+    }
+
     pub fn is_in_bounds(&self) -> bool {
         self.x < 8 && self.x >= 0 && self.y < 8 && self.y >= 0
     }
@@ -152,5 +159,12 @@ mod tests {
     fn coords_to_square_number() {
         assert_eq!(Coords::from_algebraic("a8").to_square_number(), 0);
         assert_eq!(Coords::from_algebraic("e6").to_square_number(), 20);
+    }
+
+    #[test]
+    fn coords_from_square_number() {
+        assert_eq!(Coords::from_square_number(0), Coords::from_algebraic("a8"));
+        assert_eq!(Coords::from_square_number(20), Coords::from_algebraic("e6"));
+        assert_eq!(Coords::from_square_number(63), Coords::from_algebraic("h1"));
     }
 }
