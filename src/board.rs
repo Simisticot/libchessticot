@@ -1,5 +1,3 @@
-use std::usize;
-
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
