@@ -5,7 +5,7 @@ use crate::PieceKind;
 
 #[derive(Clone, PartialEq)]
 pub struct Board {
-    content: Vec<Option<Piece>>,
+    content: [Option<Piece>; 64],
 }
 
 impl Board {
@@ -36,78 +36,113 @@ impl Board {
     }
 
     pub fn initial() -> Board {
-        let mut content = Vec::new();
-        for i in 0..64 {
-            content.push(Piece::from_initial_position(i));
+        let mut content: [Option<Piece>; 64] = [None; 64];
+        for (i, square) in content.iter_mut().enumerate() {
+            *square = Piece::from_initial_position(i);
         }
         Board { content }
     }
 
     pub fn empty() -> Board {
-        let mut content = Vec::new();
-        for _ in 0..64 {
-            content.push(None);
+        Board {
+            content: [None; 64],
         }
-        Board { content }
     }
 
     pub fn from_fen(fen_board: &str) -> Board {
-        let mut content = vec![];
+        let mut content = [None; 64];
+        let mut index = 0;
         fen_board.chars().for_each(|character| match character {
             '1'..='8' => {
                 for _ in 0..character.to_digit(10).expect("matched digits 1 through 8") {
-                    content.push(None);
+                    index += 1;
                 }
             }
             '/' => (),
-            'r' => content.push(Some(Piece {
-                kind: PieceKind::Rook,
-                color: PieceColor::Black,
-            })),
-            'n' => content.push(Some(Piece {
-                kind: PieceKind::Knight,
-                color: PieceColor::Black,
-            })),
-            'b' => content.push(Some(Piece {
-                kind: PieceKind::Bishop,
-                color: PieceColor::Black,
-            })),
-            'q' => content.push(Some(Piece {
-                kind: PieceKind::Queen,
-                color: PieceColor::Black,
-            })),
-            'k' => content.push(Some(Piece {
-                kind: PieceKind::King,
-                color: PieceColor::Black,
-            })),
-            'p' => content.push(Some(Piece {
-                kind: PieceKind::Pawn,
-                color: PieceColor::Black,
-            })),
-            'R' => content.push(Some(Piece {
-                kind: PieceKind::Rook,
-                color: PieceColor::White,
-            })),
-            'N' => content.push(Some(Piece {
-                kind: PieceKind::Knight,
-                color: PieceColor::White,
-            })),
-            'B' => content.push(Some(Piece {
-                kind: PieceKind::Bishop,
-                color: PieceColor::White,
-            })),
-            'Q' => content.push(Some(Piece {
-                kind: PieceKind::Queen,
-                color: PieceColor::White,
-            })),
-            'K' => content.push(Some(Piece {
-                kind: PieceKind::King,
-                color: PieceColor::White,
-            })),
-            'P' => content.push(Some(Piece {
-                kind: PieceKind::Pawn,
-                color: PieceColor::White,
-            })),
+            'r' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Rook,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'n' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Knight,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'b' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Bishop,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'q' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Queen,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'k' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::King,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'p' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Pawn,
+                    color: PieceColor::Black,
+                });
+                index += 1;
+            }
+            'R' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Rook,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
+            'N' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Knight,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
+            'B' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Bishop,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
+            'Q' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Queen,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
+            'K' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::King,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
+            'P' => {
+                content[index] = Some(Piece {
+                    kind: PieceKind::Pawn,
+                    color: PieceColor::White,
+                });
+                index += 1;
+            }
             _ => panic!("{} is not a valid board character in FEN", character),
         });
 
