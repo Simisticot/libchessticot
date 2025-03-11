@@ -5,7 +5,22 @@ use crate::PieceKind;
 
 #[derive(Clone, PartialEq)]
 pub struct Board {
-    content: Vec<Option<Piece>>,
+    black_rooks: u64,
+    black_knights: u64,
+    black_bishops: u64,
+    black_queens: u64,
+    black_kings: u64,
+    black_pawns: u64,
+    white_rooks: u64,
+    white_knights: u64,
+    white_bishop: u64,
+    white_queens: u64,
+    white_kings: u64,
+    white_pawns: u64,
+}
+
+fn bit_at_nth(number: u64, n: usize) -> bool {
+    ((1 << n) & number) > 0
 }
 
 impl Board {
@@ -15,7 +30,7 @@ impl Board {
         }
     }
     pub fn piece_at(&self, loc: &Coords) -> Option<Piece> {
-        self.content[loc.to_square_number()]
+        None
     }
 
     pub fn pawn_at(&self, loc: &Coords) -> bool {
@@ -29,26 +44,48 @@ impl Board {
     }
 
     pub fn take_piece_at(&mut self, loc: Coords) -> Option<Piece> {
-        self.content[loc.to_square_number()].take()
+        None
     }
     pub fn put_piece_at(&mut self, piece: Piece, loc: Coords) {
-        self.content[loc.to_square_number()] = Some(piece);
+        ()
+    }
+
+    fn black_rook_at(&self, square: Coords) -> bool {
+        bit_at_nth(self.black_rooks, square.to_square_number())
     }
 
     pub fn initial() -> Board {
-        let mut content = Vec::new();
-        for i in 0..64 {
-            content.push(Piece::from_initial_position(i));
+        Board {
+            black_rooks: (2_u64.pow(0)) + (2_u64.pow(7)),
+            black_knights: (2_u64.pow(1)) + (2_u64.pow(6)),
+            black_bishops: (2_u64.pow(2)) + (2_u64.pow(5)),
+            black_queens: 2_u64.pow(3),
+            black_kings: 2_u64.pow(4),
+            black_pawns: { (8..=15).map(|number| 2_u64.pow(number)).sum() },
+            white_rooks: (2_u64.pow(56)) + (2_u64.pow(63)),
+            white_knights: (2_u64.pow(57)) + (2_u64.pow(62)),
+            white_bishop: (2_u64.pow(58)) + (2_u64.pow(61)),
+            white_queens: (2_u64.pow(59)),
+            white_kings: (2_u64.pow(60)),
+            white_pawns: { (48..=55).map(|number| 2_u64.pow(number)).sum() },
         }
-        Board { content }
     }
 
     pub fn empty() -> Board {
-        let mut content = Vec::new();
-        for _ in 0..64 {
-            content.push(None);
+        Board {
+            black_rooks: 0,
+            black_knights: 0,
+            black_bishops: 0,
+            black_queens: 0,
+            black_kings: 0,
+            black_pawns: 0,
+            white_rooks: 0,
+            white_knights: 0,
+            white_bishop: 0,
+            white_queens: 0,
+            white_kings: 0,
+            white_pawns: 0,
         }
-        Board { content }
     }
 
     pub fn from_fen(fen_board: &str) -> Board {
@@ -112,12 +149,12 @@ impl Board {
         });
 
         assert_eq!(content.len(), 64);
-        Board { content }
+        Board::empty()
     }
 
     pub fn to_fen(&self) -> String {
         let mut fen = String::new();
-        self.content.chunks(8).for_each(|rank| {
+        /* self.content.chunks(8).for_each(|rank| {
             rank.iter()
                 .for_each(|square_contents| match square_contents {
                     None => match fen.chars().last() {
@@ -139,7 +176,7 @@ impl Board {
                     Some(piece) => fen.push(piece.to_fen_char()),
                 });
             fen.push('/');
-        });
+        }); */
         fen.pop();
         fen
     }
@@ -235,5 +272,40 @@ mod tests {
                     |piece| piece.kind == PieceKind::Pawn && piece.color == PieceColor::White
                 )
         );
+    }
+
+    #[test]
+    fn first_bit_in_1_is_set() {
+        assert!(bit_at_nth(1, 0))
+    }
+
+    #[test]
+    fn fourth_bit_in_1_is_not_set() {
+        assert!(!bit_at_nth(1, 3))
+    }
+
+    #[test]
+    fn second_bit_in_3_is_set() {
+        assert!(bit_at_nth(3, 1))
+    }
+
+    #[test]
+    fn third_bit_in_3_is_not_set() {
+        assert!(!bit_at_nth(3, 2))
+    }
+
+    #[test]
+    fn fourth_bit_in_31_is_set() {
+        assert!(bit_at_nth(31, 3))
+    }
+
+    #[test]
+    fn fourth_bit_in_32_is_not_set() {
+        assert!(!bit_at_nth(32, 3))
+    }
+
+    #[test]
+    fn black_rook_in_a8_in_initial_position() {
+        assert!(Board::initial().black_rook_at(Coords::from_algebraic("a8")))
     }
 }
