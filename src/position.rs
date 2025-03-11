@@ -2,13 +2,10 @@ use std::fmt::Debug;
 use std::str;
 
 use crate::all_squares;
+use crate::board::Board;
 use crate::cards;
 use crate::eight_degrees;
 use crate::inter_cards;
-use crate::move_piece;
-use crate::piece_at;
-use crate::put_piece_at;
-use crate::take_piece_at;
 use crate::ChessMove;
 use crate::Coords;
 use crate::Direction;
@@ -19,7 +16,7 @@ use crate::PieceKind;
 
 #[derive(Clone, PartialEq)]
 pub struct Position {
-    pub board: Vec<Vec<Option<Piece>>>,
+    pub board: Board,
     pub to_move: PieceColor,
     white_can_castle_queen_side: bool,
     white_can_castle_king_side: bool,
@@ -36,16 +33,8 @@ impl Debug for Position {
 
 impl Position {
     pub fn initial() -> Position {
-        let mut board = Vec::new();
-        for i in 0..8 {
-            let mut row = Vec::new();
-            for j in 0..8 {
-                row.push(Piece::from_initial_position(j, i));
-            }
-            board.push(row);
-        }
         Position {
-            board,
+            board: Board::initial(),
             to_move: PieceColor::White,
             white_can_castle_king_side: true,
             white_can_castle_queen_side: true,
@@ -55,16 +44,8 @@ impl Position {
         }
     }
     pub fn empty_board() -> Position {
-        let mut board = Vec::new();
-        for _ in 0..8 {
-            let mut row = Vec::new();
-            for _ in 0..8 {
-                row.push(None);
-            }
-            board.push(row);
-        }
         Position {
-            board,
+            board: Board::empty(),
             to_move: PieceColor::White,
             white_can_castle_king_side: true,
             white_can_castle_queen_side: true,
@@ -77,74 +58,6 @@ impl Position {
         let fields: Vec<&str> = fen_record.split(" ").collect();
 
         assert!(fields.len() == 6);
-
-        let mut board = vec![vec![]; 8];
-        let mut rank = 0;
-        fields[0].chars().for_each(|character| match character {
-            '1'..='8' => {
-                for _ in 0..character.to_digit(10).expect("matched digits 1 through 8") {
-                    board[rank].push(None);
-                }
-            }
-            '/' => {
-                rank += 1;
-            }
-            'r' => board[rank].push(Some(Piece {
-                kind: PieceKind::Rook,
-                color: PieceColor::Black,
-            })),
-            'n' => board[rank].push(Some(Piece {
-                kind: PieceKind::Knight,
-                color: PieceColor::Black,
-            })),
-            'b' => board[rank].push(Some(Piece {
-                kind: PieceKind::Bishop,
-                color: PieceColor::Black,
-            })),
-            'q' => board[rank].push(Some(Piece {
-                kind: PieceKind::Queen,
-                color: PieceColor::Black,
-            })),
-            'k' => board[rank].push(Some(Piece {
-                kind: PieceKind::King,
-                color: PieceColor::Black,
-            })),
-            'p' => board[rank].push(Some(Piece {
-                kind: PieceKind::Pawn,
-                color: PieceColor::Black,
-            })),
-            'R' => board[rank].push(Some(Piece {
-                kind: PieceKind::Rook,
-                color: PieceColor::White,
-            })),
-            'N' => board[rank].push(Some(Piece {
-                kind: PieceKind::Knight,
-                color: PieceColor::White,
-            })),
-            'B' => board[rank].push(Some(Piece {
-                kind: PieceKind::Bishop,
-                color: PieceColor::White,
-            })),
-            'Q' => board[rank].push(Some(Piece {
-                kind: PieceKind::Queen,
-                color: PieceColor::White,
-            })),
-            'K' => board[rank].push(Some(Piece {
-                kind: PieceKind::King,
-                color: PieceColor::White,
-            })),
-            'P' => board[rank].push(Some(Piece {
-                kind: PieceKind::Pawn,
-                color: PieceColor::White,
-            })),
-            _ => panic!("{} is not a valid board character in FEN", character),
-        });
-
-        assert_eq!(board.len(), 8);
-        for rank in &board {
-            assert_eq!(rank.len(), 8);
-        }
-
         assert!(fields[1].len() == 1);
 
         let to_move = match fields[1]
@@ -169,7 +82,7 @@ impl Position {
         };
 
         Position {
-            board,
+            board: Board::from_fen(fields[0]),
             to_move,
             en_passant_on,
             white_can_castle_queen_side: white_can_castle_left,
@@ -180,31 +93,7 @@ impl Position {
     }
 
     pub fn to_fen(&self) -> String {
-        let mut fen = String::new();
-        self.board.iter().for_each(|rank| {
-            rank.iter()
-                .for_each(|square_contents| match square_contents {
-                    None => match fen.chars().last() {
-                        None => fen.push('1'),
-                        Some(character) => match character {
-                            '/' | 'p' | 'P' | 'n' | 'N' | 'r' | 'R' | 'b' | 'B' | 'q' | 'Q'
-                            | 'k' | 'K' => fen.push('1'),
-                            '1'..='7' => {
-                                fen.pop();
-                                fen.push_str(
-                                    &(character.to_digit(10).expect("matched digits 1 through 7")
-                                        + 1)
-                                    .to_string(),
-                                );
-                            }
-                            _ => panic!("more than 8 empty squares in rank! {:?}", rank),
-                        },
-                    },
-                    Some(piece) => fen.push(piece.to_fen_char()),
-                });
-            fen.push('/');
-        });
-        fen.pop();
+        let mut fen = self.board.to_fen();
         fen.push(' ');
 
         match self.to_move {
@@ -265,10 +154,10 @@ impl Position {
         let mut en_passant_on = None;
         match chess_move {
             ChessMove::RegularMove(coordinates) => {
-                move_piece(&mut new_board, coordinates.origin, coordinates.destination);
+                new_board.move_piece(coordinates.origin, coordinates.destination);
             }
             ChessMove::PawnSkip(movement) => {
-                move_piece(&mut new_board, movement.origin, movement.destination);
+                new_board.move_piece(movement.origin, movement.destination);
                 en_passant_on = Some(Coords {
                     x: movement.origin.x,
                     y: (movement.origin.y + movement.destination.y) / 2_isize,
@@ -276,38 +165,21 @@ impl Position {
             }
             ChessMove::CastleLeft => {
                 let row = self.to_move.homerow();
-                move_piece(
-                    &mut new_board,
-                    Coords { x: 4, y: row },
-                    Coords { x: 2, y: row },
-                );
-                move_piece(
-                    &mut new_board,
-                    Coords { x: 0, y: row },
-                    Coords { x: 3, y: row },
-                );
+                new_board.move_piece(Coords { x: 4, y: row }, Coords { x: 2, y: row });
+                new_board.move_piece(Coords { x: 0, y: row }, Coords { x: 3, y: row });
             }
             ChessMove::CastleRight => {
                 let row = self.to_move.homerow();
-                move_piece(
-                    &mut new_board,
-                    Coords { x: 4, y: row },
-                    Coords { x: 6, y: row },
-                );
-                move_piece(
-                    &mut new_board,
-                    Coords { x: 7, y: row },
-                    Coords { x: 5, y: row },
-                );
+                new_board.move_piece(Coords { x: 4, y: row }, Coords { x: 6, y: row });
+                new_board.move_piece(Coords { x: 7, y: row }, Coords { x: 5, y: row });
             }
             ChessMove::EnPassant(movement, pawn_taken) => {
-                move_piece(&mut new_board, movement.origin, movement.destination);
-                take_piece_at(&mut new_board, *pawn_taken);
+                new_board.move_piece(movement.origin, movement.destination);
+                new_board.take_piece_at(*pawn_taken);
             }
             ChessMove::Promotion(movement, promoted_to) => {
-                take_piece_at(&mut new_board, movement.origin);
-                put_piece_at(
-                    &mut new_board,
+                new_board.take_piece_at(movement.origin);
+                new_board.put_piece_at(
                     Piece {
                         kind: *promoted_to,
                         color: self.to_move,
@@ -422,7 +294,7 @@ impl Position {
     }
 
     fn possible_moves_from_origin(&self, origin: &Coords) -> Vec<ChessMove> {
-        match piece_at(&self.board, origin) {
+        match self.board.piece_at(origin) {
             None => Vec::new(),
             Some(piece) => {
                 if piece.color == self.to_move {
@@ -452,7 +324,9 @@ impl Position {
             .projected_movement(square, eight_degrees(), &by.opposite())
             .iter()
             .any(|chess_move| match chess_move {
-                ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.destination)
+                ChessMove::RegularMove(movement) => self
+                    .board
+                    .piece_at(&movement.destination)
                     .is_some_and(|piece| piece.kind == PieceKind::King && &piece.color == by),
                 _ => false,
             });
@@ -460,12 +334,13 @@ impl Position {
             self.rook_from(square, &by.opposite())
                 .iter()
                 .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => {
-                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
+                    ChessMove::RegularMove(movement) => self
+                        .board
+                        .piece_at(&movement.destination)
+                        .is_some_and(|piece| {
                             (piece.kind == PieceKind::Rook || piece.kind == PieceKind::Queen)
                                 && &piece.color == by
-                        })
-                    }
+                        }),
                     _ => false,
                 });
 
@@ -473,7 +348,9 @@ impl Position {
             .bishop_from(square, &by.opposite())
             .iter()
             .any(|chess_move| match chess_move {
-                ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.destination)
+                ChessMove::RegularMove(movement) => self
+                    .board
+                    .piece_at(&movement.destination)
                     .is_some_and(|piece| {
                         (piece.kind == PieceKind::Bishop || piece.kind == PieceKind::Queen)
                             && &piece.color == by
@@ -484,16 +361,17 @@ impl Position {
             self.knight_from(square, &by.opposite())
                 .iter()
                 .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => {
-                        piece_at(&self.board, &movement.destination).is_some_and(|piece| {
-                            piece.kind == PieceKind::Knight && &piece.color == by
-                        })
-                    }
+                    ChessMove::RegularMove(movement) => self
+                        .board
+                        .piece_at(&movement.destination)
+                        .is_some_and(|piece| piece.kind == PieceKind::Knight && &piece.color == by),
                     _ => false,
                 });
 
         let attacked_by_pawn: bool = self.attacked_by_pawn(square, by);
-        let attacked_en_passant: bool = piece_at(&self.board, square)
+        let attacked_en_passant: bool = self
+            .board
+            .piece_at(square)
             .is_some_and(|piece| piece.color == by.opposite() && piece.kind == PieceKind::Pawn)
             && self.en_passant_on.is_some_and(|en_passant_on| {
                 en_passant_on
@@ -518,7 +396,7 @@ impl Position {
             .iter()
             .any(|attacking_square| {
                 attacking_square.is_in_bounds()
-                    && piece_at(&self.board, attacking_square).is_some_and(|piece| {
+                    && self.board.piece_at(attacking_square).is_some_and(|piece| {
                         piece.kind == PieceKind::Pawn && &piece.color == attacking_color
                     })
             })
@@ -564,7 +442,9 @@ impl Position {
             .filter_map(|dir| {
                 let destination = *origin + *dir;
                 if destination.is_in_bounds()
-                    && !piece_at(&self.board, &destination)
+                    && !self
+                        .board
+                        .piece_at(&destination)
                         .is_some_and(|piece| piece.color == *origin_color)
                 {
                     Some(ChessMove::RegularMove(Move {
@@ -581,44 +461,56 @@ impl Position {
     fn king_movement(&self, origin: &Coords, origin_color: &PieceColor) -> Vec<ChessMove> {
         let mut moves: Vec<ChessMove> = self.base_kind_movement(origin, origin_color);
         let row = origin_color.homerow();
-        if piece_at(&self.board, &Coords { y: row, x: 5 }).is_none()
-            && piece_at(&self.board, &Coords { y: row, x: 6 }).is_none()
-            && piece_at(&self.board, &Coords { y: row, x: 4 }).is_some_and(|piece| {
-                piece
-                    == Piece {
-                        kind: PieceKind::King,
-                        color: *origin_color,
-                    }
-            })
-            && piece_at(&self.board, &Coords { y: row, x: 7 }).is_some_and(|piece| {
-                piece
-                    == Piece {
-                        kind: PieceKind::Rook,
-                        color: *origin_color,
-                    }
-            })
+        if self.board.piece_at(&Coords { y: row, x: 5 }).is_none()
+            && self.board.piece_at(&Coords { y: row, x: 6 }).is_none()
+            && self
+                .board
+                .piece_at(&Coords { y: row, x: 4 })
+                .is_some_and(|piece| {
+                    piece
+                        == Piece {
+                            kind: PieceKind::King,
+                            color: *origin_color,
+                        }
+                })
+            && self
+                .board
+                .piece_at(&Coords { y: row, x: 7 })
+                .is_some_and(|piece| {
+                    piece
+                        == Piece {
+                            kind: PieceKind::Rook,
+                            color: *origin_color,
+                        }
+                })
             && self.can_castle_king_side(origin_color)
             && !self.is_in_check(origin_color)
         {
             moves.push(ChessMove::CastleRight);
         }
-        if piece_at(&self.board, &Coords { y: row, x: 3 }).is_none()
-            && piece_at(&self.board, &Coords { y: row, x: 2 }).is_none()
-            && piece_at(&self.board, &Coords { y: row, x: 1 }).is_none()
-            && piece_at(&self.board, &Coords { y: row, x: 4 }).is_some_and(|piece| {
-                piece
-                    == Piece {
-                        kind: PieceKind::King,
-                        color: *origin_color,
-                    }
-            })
-            && piece_at(&self.board, &Coords { y: row, x: 0 }).is_some_and(|piece| {
-                piece
-                    == Piece {
-                        kind: PieceKind::Rook,
-                        color: *origin_color,
-                    }
-            })
+        if self.board.piece_at(&Coords { y: row, x: 3 }).is_none()
+            && self.board.piece_at(&Coords { y: row, x: 2 }).is_none()
+            && self.board.piece_at(&Coords { y: row, x: 1 }).is_none()
+            && self
+                .board
+                .piece_at(&Coords { y: row, x: 4 })
+                .is_some_and(|piece| {
+                    piece
+                        == Piece {
+                            kind: PieceKind::King,
+                            color: *origin_color,
+                        }
+                })
+            && self
+                .board
+                .piece_at(&Coords { y: row, x: 0 })
+                .is_some_and(|piece| {
+                    piece
+                        == Piece {
+                            kind: PieceKind::Rook,
+                            color: *origin_color,
+                        }
+                })
             && self.can_castle_queen_side(origin_color)
             && !self.is_in_check(origin_color)
         {
@@ -655,7 +547,9 @@ impl Position {
             .filter(|chess_move| match chess_move {
                 ChessMove::RegularMove(coordinates) => {
                     coordinates.destination.is_in_bounds()
-                        && piece_at(&self.board, &coordinates.destination)
+                        && self
+                            .board
+                            .piece_at(&coordinates.destination)
                             .is_none_or(|piece| &piece.color != color)
                 }
                 _ => false,
@@ -692,14 +586,14 @@ impl Position {
             return legal_moves;
         }
 
-        if piece_at(&self.board, &ahead_one).is_none() {
+        if self.board.piece_at(&ahead_one).is_none() {
             legal_moves.push(ChessMove::RegularMove(Move {
                 origin: *origin,
                 destination: ahead_one,
             }));
             if ahead_two.is_in_bounds()
                 && (origin.y == 1 || origin.y == 6)
-                && piece_at(&self.board, &ahead_two).is_none()
+                && self.board.piece_at(&ahead_two).is_none()
             {
                 legal_moves.push(ChessMove::PawnSkip(Move {
                     origin: *origin,
@@ -712,7 +606,7 @@ impl Position {
             .iter()
             .for_each(|diagonal| {
                 if diagonal.is_in_bounds() {
-                    match piece_at(&self.board, diagonal) {
+                    match self.board.piece_at(diagonal) {
                         None => {}
                         Some(piece) => {
                             if piece.color == color.opposite() {
@@ -786,7 +680,9 @@ impl Position {
         for i in 0..8 {
             for j in 0..8 {
                 let loc = Coords { y: i, x: j };
-                if piece_at(&self.board, &loc)
+                if self
+                    .board
+                    .piece_at(&loc)
                     .is_some_and(|piece| piece.kind == PieceKind::King && piece.color == *color)
                 {
                     return Some(loc);
@@ -825,7 +721,7 @@ impl Position {
             if !next_square.is_in_bounds() {
                 break;
             }
-            if let Some(piece) = piece_at(&self.board, &next_square) {
+            if let Some(piece) = self.board.piece_at(&next_square) {
                 if piece.color == origin_color.opposite() {
                     squares.push(next_square);
                 }
@@ -840,7 +736,9 @@ impl Position {
         all_squares()
             .iter()
             .filter(|square| {
-                piece_at(&self.board, square).is_some_and(|piece| piece.color == color)
+                self.board
+                    .piece_at(square)
+                    .is_some_and(|piece| piece.color == color)
             })
             .count()
     }
@@ -895,59 +793,31 @@ mod tests {
 
     #[test]
     fn execute_move_into_check() {
-        let mut position = Position::empty_board();
-
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[2][2] = Some(Piece {
-            kind: PieceKind::Knight,
-            color: PieceColor::Black,
-        });
-        let king_location = Coords { y: 0, x: 0 };
-        let king_destination = Coords { y: 0, x: 1 };
+        let position = Position::from_fen("K7/8/2n5/8/8/8/8/8 w - - 0 1");
 
         let new_position = position.after_move(&ChessMove::RegularMove(Move {
-            origin: king_location,
-            destination: king_destination,
+            origin: Coords::from_algebraic("a8"),
+            destination: Coords::from_algebraic("b8"),
         }));
-        assert!(new_position.king_location(&PieceColor::White) == Some(king_destination));
-        assert!(new_position.is_attacked_by(&PieceColor::Black, &king_destination,));
+        assert!(
+            new_position.king_location(&PieceColor::White) == Some(Coords::from_algebraic("b8"))
+        );
+        assert!(new_position.is_attacked_by(&PieceColor::Black, &Coords::from_algebraic("b8"),));
         assert!(new_position.is_in_check(&PieceColor::White));
     }
 
     #[test]
     fn detects_check() {
-        let mut position = Position::empty_board();
-
-        position.board[0][1] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[2][2] = Some(Piece {
-            kind: PieceKind::Knight,
-            color: PieceColor::Black,
-        });
+        let position = Position::from_fen("1K6/8/2n5/8/8/8/8/8 w - - 0 1");
         assert!(position.is_in_check(&PieceColor::White));
     }
 
     #[test]
     fn detects_move_into_check() {
-        let mut position = Position::empty_board();
-
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[2][2] = Some(Piece {
-            kind: PieceKind::Knight,
-            color: PieceColor::Black,
-        });
-        let king_location = Coords { y: 0, x: 0 };
+        let position = Position::from_fen("K7/8/2n5/8/8/8/8/8 w - - 0 1");
         assert!(position.opens_own_king(&ChessMove::RegularMove(Move {
-            origin: king_location,
-            destination: Coords { y: 0, x: 1 },
+            origin: Coords::from_algebraic("a8"),
+            destination: Coords::from_algebraic("b8"),
         }),));
     }
 
@@ -1038,27 +908,19 @@ mod tests {
 
     #[test]
     fn no_en_passant_from_accross_the_board() {
-        let mut position = Position::empty_board();
-        position.board[1][4] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::White,
-        });
-        position.board[7][2] = Some(Piece {
-            kind: PieceKind::Pawn,
-            color: PieceColor::Black,
-        });
+        let position = Position::from_fen("8/1p6/8/8/8/8/4P3/8 w - - 0 1");
         let after_skip = position.after_move(&ChessMove::PawnSkip(Move {
-            origin: Coords { y: 1, x: 4 },
-            destination: Coords { y: 3, x: 4 },
+            origin: Coords::from_algebraic("e2"),
+            destination: Coords::from_algebraic("e4"),
         }));
 
-        assert!(after_skip.en_passant_on == Some(Coords { y: 2, x: 4 }));
+        assert!(after_skip.en_passant_on == Some(Coords::from_algebraic("e3")));
         assert!(!after_skip.is_move_legal(&ChessMove::EnPassant(
             Move {
-                origin: Coords { y: 7, x: 2 },
-                destination: Coords { y: 2, x: 4 }
+                origin: Coords::from_algebraic("b7"),
+                destination: Coords::from_algebraic("e3"),
             },
-            Coords { y: 3, x: 4 }
+            Coords::from_algebraic("e4"),
         ),))
     }
 
@@ -1108,15 +970,11 @@ mod tests {
 
     #[test]
     fn finds_king() {
-        let mut position = Position::empty_board();
+        let position = Position::from_fen("8/8/8/8/8/8/8/4K3 w - - 0 1");
 
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
         assert_eq!(
             position.king_location(&PieceColor::White).unwrap(),
-            Coords { x: 0, y: 0 }
+            Coords::from_algebraic("e1"),
         )
     }
 
@@ -1164,52 +1022,7 @@ mod tests {
 
         assert!(!moved_left_rook_up_one.white_can_castle_queen_side);
         assert!(moved_left_rook_up_one.white_can_castle_king_side);
-
         assert!(!moved_left_rook_up_one.is_move_legal(&ChessMove::CastleLeft));
-        assert!(piece_at(
-            &moved_left_rook_up_one.board,
-            &Coords {
-                y: PieceColor::White.homerow(),
-                x: 5
-            }
-        )
-        .is_none());
-        assert!(piece_at(
-            &moved_left_rook_up_one.board,
-            &Coords {
-                y: PieceColor::White.homerow(),
-                x: 6
-            }
-        )
-        .is_none());
-        assert!(piece_at(
-            &moved_left_rook_up_one.board,
-            &Coords {
-                y: PieceColor::White.homerow(),
-                x: 4
-            }
-        )
-        .is_some_and(|piece| {
-            piece
-                == Piece {
-                    kind: PieceKind::King,
-                    color: PieceColor::White,
-                }
-        }));
-        assert!(piece_at(
-            &moved_left_rook_up_one.board,
-            &Coords {
-                y: PieceColor::White.homerow(),
-                x: 7
-            }
-        )
-        .is_some_and(|piece| {
-            piece
-                == Piece {
-                    kind: PieceKind::Rook,
-                    color: PieceColor::White,
-                }
-        }));
         assert!(moved_left_rook_up_one.can_castle_king_side(&PieceColor::White));
         assert!(moved_left_rook_up_one
             .all_legal_moves()
@@ -1244,20 +1057,7 @@ mod tests {
 
     #[test]
     fn detects_stalemate() {
-        let mut position = Position::empty_board();
-        position.board[0][0] = Some(Piece {
-            kind: PieceKind::King,
-            color: PieceColor::White,
-        });
-        position.board[2][1] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::Black,
-        });
-        position.board[1][2] = Some(Piece {
-            kind: PieceKind::Rook,
-            color: PieceColor::Black,
-        });
-
+        let position = Position::from_fen("K7/7r/8/8/8/8/8/1r6 w - - 0 1");
         assert!(position.is_stalemate());
     }
 

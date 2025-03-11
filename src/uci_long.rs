@@ -1,7 +1,4 @@
-use crate::{
-    board_manip::{king_at, pawn_at},
-    ChessMove, Coords, Direction, Move, PieceColor, PieceKind, Position,
-};
+use crate::{ChessMove, Coords, Direction, Move, PieceColor, PieceKind, Position};
 
 impl ChessMove {
     pub fn to_uci_long(&self, current_position: &Position) -> String {
@@ -55,11 +52,10 @@ impl ChessMove {
         };
         if let Some(target) = promotion_target {
             ChessMove::Promotion(movement, target)
-        } else if pawn_at(&current_position.board, &movement.origin)
-            && movement.y_abs_distance() > 1
+        } else if current_position.board.pawn_at(&movement.origin) && movement.y_abs_distance() > 1
         {
             ChessMove::PawnSkip(movement)
-        } else if pawn_at(&current_position.board, &movement.origin)
+        } else if current_position.board.pawn_at(&movement.origin)
             && current_position
                 .en_passant_on
                 .is_some_and(|square| square == movement.destination)
@@ -72,10 +68,9 @@ impl ChessMove {
                         dy: current_position.to_move.pawn_orientation(),
                     },
             )
-        } else if king_at(&current_position.board, &movement.origin) && movement.x_distance() == -2
-        {
+        } else if current_position.board.king_at(&movement.origin) && movement.x_distance() == -2 {
             ChessMove::CastleLeft
-        } else if king_at(&current_position.board, &movement.origin) && movement.x_distance() == 2 {
+        } else if current_position.board.king_at(&movement.origin) && movement.x_distance() == 2 {
             ChessMove::CastleRight
         } else {
             ChessMove::RegularMove(movement)

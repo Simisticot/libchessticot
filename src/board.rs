@@ -1,0 +1,160 @@
+use crate::Coords;
+use crate::Piece;
+use crate::PieceColor;
+use crate::PieceKind;
+
+#[derive(Clone, PartialEq)]
+pub struct Board {
+    content: Vec<Vec<Option<Piece>>>,
+}
+
+impl Board {
+    pub fn move_piece(&mut self, origin: Coords, dest: Coords) {
+        if let Some(origin_piece) = self.take_piece_at(origin) {
+            self.put_piece_at(origin_piece, dest);
+        }
+    }
+    pub fn piece_at(&self, loc: &Coords) -> Option<Piece> {
+        self.content[loc.y as usize][loc.x as usize]
+    }
+
+    pub fn pawn_at(&self, loc: &Coords) -> bool {
+        self.piece_at(loc)
+            .is_some_and(|piece| piece.kind == PieceKind::Pawn)
+    }
+
+    pub fn king_at(&self, loc: &Coords) -> bool {
+        self.piece_at(loc)
+            .is_some_and(|piece| piece.kind == PieceKind::King)
+    }
+
+    pub fn take_piece_at(&mut self, loc: Coords) -> Option<Piece> {
+        self.content[loc.y as usize][loc.x as usize].take()
+    }
+    pub fn put_piece_at(&mut self, piece: Piece, loc: Coords) {
+        self.content[loc.y as usize][loc.x as usize] = Some(piece);
+    }
+
+    pub fn initial() -> Board {
+        let mut content = Vec::new();
+        for i in 0..8 {
+            let mut row = Vec::new();
+            for j in 0..8 {
+                row.push(Piece::from_initial_position(j, i));
+            }
+            content.push(row);
+        }
+        return Board { content };
+    }
+
+    pub fn empty() -> Board {
+        let mut content = Vec::new();
+        for _ in 0..8 {
+            let mut row = Vec::new();
+            for _ in 0..8 {
+                row.push(None);
+            }
+            content.push(row);
+        }
+        Board { content }
+    }
+
+    pub fn from_fen(fen_board: &str) -> Board {
+        let mut content = vec![vec![]; 8];
+        let mut rank = 0;
+        fen_board.chars().for_each(|character| match character {
+            '1'..='8' => {
+                for _ in 0..character.to_digit(10).expect("matched digits 1 through 8") {
+                    content[rank].push(None);
+                }
+            }
+            '/' => {
+                rank += 1;
+            }
+            'r' => content[rank].push(Some(Piece {
+                kind: PieceKind::Rook,
+                color: PieceColor::Black,
+            })),
+            'n' => content[rank].push(Some(Piece {
+                kind: PieceKind::Knight,
+                color: PieceColor::Black,
+            })),
+            'b' => content[rank].push(Some(Piece {
+                kind: PieceKind::Bishop,
+                color: PieceColor::Black,
+            })),
+            'q' => content[rank].push(Some(Piece {
+                kind: PieceKind::Queen,
+                color: PieceColor::Black,
+            })),
+            'k' => content[rank].push(Some(Piece {
+                kind: PieceKind::King,
+                color: PieceColor::Black,
+            })),
+            'p' => content[rank].push(Some(Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::Black,
+            })),
+            'R' => content[rank].push(Some(Piece {
+                kind: PieceKind::Rook,
+                color: PieceColor::White,
+            })),
+            'N' => content[rank].push(Some(Piece {
+                kind: PieceKind::Knight,
+                color: PieceColor::White,
+            })),
+            'B' => content[rank].push(Some(Piece {
+                kind: PieceKind::Bishop,
+                color: PieceColor::White,
+            })),
+            'Q' => content[rank].push(Some(Piece {
+                kind: PieceKind::Queen,
+                color: PieceColor::White,
+            })),
+            'K' => content[rank].push(Some(Piece {
+                kind: PieceKind::King,
+                color: PieceColor::White,
+            })),
+            'P' => content[rank].push(Some(Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            })),
+            _ => panic!("{} is not a valid board character in FEN", character),
+        });
+
+        assert_eq!(content.len(), 8);
+        for rank in &content {
+            assert_eq!(rank.len(), 8);
+        }
+        Board { content }
+    }
+
+    pub fn to_fen(&self) -> String {
+        let mut fen = String::new();
+        self.content.iter().for_each(|rank| {
+            rank.iter()
+                .for_each(|square_contents| match square_contents {
+                    None => match fen.chars().last() {
+                        None => fen.push('1'),
+                        Some(character) => match character {
+                            '/' | 'p' | 'P' | 'n' | 'N' | 'r' | 'R' | 'b' | 'B' | 'q' | 'Q'
+                            | 'k' | 'K' => fen.push('1'),
+                            '1'..='7' => {
+                                fen.pop();
+                                fen.push_str(
+                                    &(character.to_digit(10).expect("matched digits 1 through 7")
+                                        + 1)
+                                    .to_string(),
+                                );
+                            }
+                            _ => panic!("more than 8 empty squares in rank! {:?}", rank),
+                        },
+                    },
+                    Some(piece) => fen.push(piece.to_fen_char()),
+                });
+            fen.push('/');
+        });
+        fen.pop();
+        fen
+    }
+}

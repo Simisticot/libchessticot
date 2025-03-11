@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use std::fmt::Display;
 
 use crate::all_squares;
-use crate::piece_at;
 use crate::player::Player;
 use crate::ChessMove;
 use crate::Piece;
@@ -118,7 +117,7 @@ fn basic_evaluation(position: &Position) -> isize {
     }
     all_squares()
         .iter()
-        .map(|square| match piece_at(&position.board, square) {
+        .map(|square| match position.board.piece_at(square) {
             None => 0_isize,
             Some(piece) => evaluate_piece(
                 &piece,
@@ -233,7 +232,7 @@ fn better_evaluation(position: &Position) -> isize {
     }
     let score_from_all_squares = all_squares()
         .iter()
-        .map(|square| match piece_at(&position.board, square) {
+        .map(|square| match position.board.piece_at(square) {
             None => 0_isize,
             Some(piece) => evaluate_piece(
                 &piece,
@@ -284,7 +283,6 @@ fn alpha_beta_negamax(
     }
     best
 }
-
 
 fn planner_evaluation(position: &Position) -> isize {
     -alpha_beta_negamax(
