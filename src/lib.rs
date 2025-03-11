@@ -27,14 +27,6 @@ pub struct Game {
 
 impl Game {
     pub fn start() -> Game {
-        let mut board = Vec::new();
-        for i in 0..8 {
-            let mut row = Vec::new();
-            for j in 0..8 {
-                row.push(Piece::from_initial_position(j, i));
-            }
-            board.push(row);
-        }
         Game {
             current_position: Position::initial(),
             checkmated: None,

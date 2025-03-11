@@ -8,7 +8,7 @@ pub struct Coords {
 
 impl Coords {
     pub fn to_square_number(&self) -> usize {
-        (self.x + 1 + self.y * 8).try_into().unwrap()
+        (self.x + self.y * 8).try_into().unwrap()
     }
 
     pub fn is_in_bounds(&self) -> bool {
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn coords_to_square_number() {
-        assert_eq!(Coords::from_algebraic("a8").to_square_number(), 1);
-        assert_eq!(Coords::from_algebraic("e6").to_square_number(), 21);
+        assert_eq!(Coords::from_algebraic("a8").to_square_number(), 0);
+        assert_eq!(Coords::from_algebraic("e6").to_square_number(), 20);
     }
 }

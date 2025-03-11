@@ -7,31 +7,57 @@ pub struct Piece {
 }
 
 impl Piece {
-    pub fn from_initial_position(x: isize, y: isize) -> Option<Piece> {
-        let color = match y {
-            0 | 1 => Some(PieceColor::Black),
-            6 | 7 => Some(PieceColor::White),
+    pub fn from_initial_position(square_number: usize) -> Option<Piece> {
+        match square_number {
+            0 | 7 => Some(Piece {
+                kind: PieceKind::Rook,
+                color: PieceColor::Black,
+            }),
+            1 | 6 => Some(Piece {
+                kind: PieceKind::Knight,
+                color: PieceColor::Black,
+            }),
+            2 | 5 => Some(Piece {
+                kind: PieceKind::Bishop,
+                color: PieceColor::Black,
+            }),
+            3 => Some(Piece {
+                kind: PieceKind::Queen,
+                color: PieceColor::Black,
+            }),
+            4 => Some(Piece {
+                kind: PieceKind::King,
+                color: PieceColor::Black,
+            }),
+            8..=15 => Some(Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::Black,
+            }),
+            48..=55 => Some(Piece {
+                kind: PieceKind::Pawn,
+                color: PieceColor::White,
+            }),
+            56 | 63 => Some(Piece {
+                kind: PieceKind::Rook,
+                color: PieceColor::White,
+            }),
+            57 | 62 => Some(Piece {
+                kind: PieceKind::Knight,
+                color: PieceColor::White,
+            }),
+            58 | 61 => Some(Piece {
+                kind: PieceKind::Bishop,
+                color: PieceColor::White,
+            }),
+            59 => Some(Piece {
+                kind: PieceKind::Queen,
+                color: PieceColor::White,
+            }),
+            60 => Some(Piece {
+                kind: PieceKind::King,
+                color: PieceColor::White,
+            }),
             _ => None,
-        };
-        let kind = match y {
-            1 | 6 => Some(PieceKind::Pawn),
-            0 | 7 => match x {
-                0 | 7 => Some(PieceKind::Rook),
-                1 | 6 => Some(PieceKind::Knight),
-                2 | 5 => Some(PieceKind::Bishop),
-                3 => Some(PieceKind::Queen),
-                4 => Some(PieceKind::King),
-                _ => panic!("Row should not be over 8 squares."),
-            },
-            _ => None,
-        };
-        if kind.is_none() || color.is_none() {
-            None
-        } else {
-            Some(Piece {
-                kind: kind.unwrap(),
-                color: color.unwrap(),
-            })
         }
     }
 
