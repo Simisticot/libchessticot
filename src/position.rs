@@ -449,7 +449,7 @@ impl Position {
     }
     pub fn is_attacked_by(&self, by: &PieceColor, square: &Coords) -> bool {
         let attacked_by_king: bool = self
-            .projected_movement(square, eight_degrees(), &by.opposite(), Some(1))
+            .projected_movement(square, eight_degrees(), &by.opposite())
             .iter()
             .any(|chess_move| match chess_move {
                 ChessMove::RegularMove(movement) => piece_at(&self.board, &movement.destination)
@@ -557,8 +557,29 @@ impl Position {
             PieceKind::King => self.king_movement(origin, &piece.color),
         }
     }
+
+    fn base_kind_movement(&self, origin: &Coords, origin_color: &PieceColor) -> Vec<ChessMove> {
+        eight_degrees()
+            .iter()
+            .filter_map(|dir| {
+                let destination = *origin + *dir;
+                if destination.is_in_bounds()
+                    && !piece_at(&self.board, &destination)
+                        .is_some_and(|piece| piece.color == *origin_color)
+                {
+                    Some(ChessMove::RegularMove(Move {
+                        origin: *origin,
+                        destination: *origin + *dir,
+                    }))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     fn king_movement(&self, origin: &Coords, origin_color: &PieceColor) -> Vec<ChessMove> {
-        let mut moves = self.projected_movement(origin, eight_degrees(), origin_color, Some(1));
+        let mut moves: Vec<ChessMove> = self.base_kind_movement(origin, origin_color);
         let row = origin_color.homerow();
         if piece_at(&self.board, &Coords { y: row, x: 5 }).is_none()
             && piece_at(&self.board, &Coords { y: row, x: 6 }).is_none()
@@ -607,10 +628,10 @@ impl Position {
         moves
     }
     fn queen_movement(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
-        self.projected_movement(origin, eight_degrees(), color, None)
+        self.projected_movement(origin, eight_degrees(), color)
     }
     fn bishop_from(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
-        self.projected_movement(origin, inter_cards(), color, None)
+        self.projected_movement(origin, inter_cards(), color)
     }
     fn knight_from(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
         let directions: Vec<Direction> = vec![
@@ -642,7 +663,7 @@ impl Position {
             .collect()
     }
     fn rook_from(&self, origin: &Coords, color: &PieceColor) -> Vec<ChessMove> {
-        self.projected_movement(origin, cards(), color, None)
+        self.projected_movement(origin, cards(), color)
     }
 
     fn pawn_attacked_squares(origin: &Coords, color: &PieceColor) -> Vec<Coords> {
@@ -779,11 +800,10 @@ impl Position {
         origin: &Coords,
         directions: Vec<Direction>,
         origin_color: &PieceColor,
-        limit: Option<isize>,
     ) -> Vec<ChessMove> {
         directions
             .iter()
-            .flat_map(|dir| self.raycast(origin, dir, origin_color, limit))
+            .flat_map(|dir| self.raycast(origin, dir, origin_color))
             .map(|destination| {
                 ChessMove::RegularMove(Move {
                     origin: *origin,
@@ -797,12 +817,10 @@ impl Position {
         origin: &Coords,
         direction: &Direction,
         origin_color: &PieceColor,
-        limit: Option<isize>,
     ) -> Vec<Coords> {
-        let limit = limit.unwrap_or(7) + 1;
         let mut squares = vec![];
-        // for instead of loop to avoid potential infinite loop
-        for i in 1..limit {
+        let mut i = 1;
+        loop {
             let next_square = *origin + (*direction * i);
             if !next_square.is_in_bounds() {
                 break;
@@ -814,6 +832,7 @@ impl Position {
                 break;
             }
             squares.push(next_square);
+            i += 1;
         }
         squares
     }
