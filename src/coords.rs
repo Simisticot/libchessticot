@@ -7,6 +7,10 @@ pub struct Coords {
 }
 
 impl Coords {
+    pub fn to_square_number(&self) -> usize {
+        (self.x + 1 + self.y * 8).try_into().unwrap()
+    }
+
     pub fn is_in_bounds(&self) -> bool {
         self.x < 8 && self.x >= 0 && self.y < 8 && self.y >= 0
     }
@@ -25,7 +29,7 @@ impl Coords {
         };
         let rank = self.y.abs_diff(8).to_string();
         let mut algebraic = String::new();
-        algebraic.push_str(&file);
+        algebraic.push_str(file);
         algebraic.push_str(&rank);
         algebraic
     }
@@ -138,8 +142,15 @@ mod tests {
     fn coord_from_algebraic() {
         assert_eq!(Coords { x: 4, y: 4 }, Coords::from_algebraic("e4"));
     }
+
     #[test]
     fn coords_to_algebraic() {
         assert_eq!("e4", Coords { x: 4, y: 4 }.to_algebraic());
+    }
+
+    #[test]
+    fn coords_to_square_number() {
+        assert_eq!(Coords::from_algebraic("a8").to_square_number(), 1);
+        assert_eq!(Coords::from_algebraic("e6").to_square_number(), 21);
     }
 }
