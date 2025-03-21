@@ -34,62 +34,63 @@ impl Board {
         }
     }
     pub fn piece_at(&self, loc: &Coords) -> Option<Piece> {
-        if self.black_rook_at(loc) {
+        let square_number = loc.to_square_number();
+        if self.black_rook_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Rook,
                 color: PieceColor::Black,
             })
-        } else if self.black_knight_at(loc) {
+        } else if self.black_knight_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Knight,
                 color: PieceColor::Black,
             })
-        } else if self.black_bishop_at(loc) {
+        } else if self.black_bishop_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Bishop,
                 color: PieceColor::Black,
             })
-        } else if self.black_queen_at(loc) {
+        } else if self.black_queen_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Queen,
                 color: PieceColor::Black,
             })
-        } else if self.black_king_at(loc) {
+        } else if self.black_king_at(square_number) {
             Some(Piece {
                 kind: PieceKind::King,
                 color: PieceColor::Black,
             })
-        } else if self.black_pawn_at(loc) {
+        } else if self.black_pawn_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Pawn,
                 color: PieceColor::Black,
             })
-        } else if self.white_rook_at(loc) {
+        } else if self.white_rook_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Rook,
                 color: PieceColor::White,
             })
-        } else if self.white_knight_at(loc) {
+        } else if self.white_knight_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Knight,
                 color: PieceColor::White,
             })
-        } else if self.white_bishop_at(loc) {
+        } else if self.white_bishop_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Bishop,
                 color: PieceColor::White,
             })
-        } else if self.white_queen_at(loc) {
+        } else if self.white_queen_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Queen,
                 color: PieceColor::White,
             })
-        } else if self.white_king_at(loc) {
+        } else if self.white_king_at(square_number) {
             Some(Piece {
                 kind: PieceKind::King,
                 color: PieceColor::White,
             })
-        } else if self.white_pawn_at(loc) {
+        } else if self.white_pawn_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Pawn,
                 color: PieceColor::White,
@@ -100,11 +101,13 @@ impl Board {
     }
 
     pub fn pawn_at(&self, loc: &Coords) -> bool {
-        self.black_pawn_at(loc) || self.white_pawn_at(loc)
+        let square_number = loc.to_square_number();
+        self.black_pawn_at(square_number) || self.white_pawn_at(square_number)
     }
 
     pub fn king_at(&self, loc: &Coords) -> bool {
-        self.white_king_at(loc) || self.black_king_at(loc)
+        let square_number = loc.to_square_number();
+        self.white_king_at(square_number) || self.black_king_at(square_number)
     }
 
     pub fn take_piece_at(&mut self, loc: Coords) -> Option<Piece> {
@@ -154,42 +157,42 @@ impl Board {
         }
     }
 
-    fn black_rook_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_rooks, square.to_square_number())
+    fn black_rook_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_rooks, square_number)
     }
-    fn black_knight_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_knights, square.to_square_number())
+    fn black_knight_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_knights, square_number)
     }
-    fn black_bishop_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_bishops, square.to_square_number())
+    fn black_bishop_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_bishops, square_number)
     }
-    fn black_queen_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_queens, square.to_square_number())
+    fn black_queen_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_queens, square_number)
     }
-    fn black_king_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_kings, square.to_square_number())
+    fn black_king_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_kings, square_number)
     }
-    fn black_pawn_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.black_pawns, square.to_square_number())
+    fn black_pawn_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.black_pawns, square_number)
     }
 
-    fn white_rook_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_rooks, square.to_square_number())
+    fn white_rook_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_rooks, square_number)
     }
-    fn white_knight_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_knights, square.to_square_number())
+    fn white_knight_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_knights, square_number)
     }
-    fn white_bishop_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_bishops, square.to_square_number())
+    fn white_bishop_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_bishops, square_number)
     }
-    fn white_queen_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_queens, square.to_square_number())
+    fn white_queen_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_queens, square_number)
     }
-    fn white_king_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_kings, square.to_square_number())
+    fn white_king_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_kings, square_number)
     }
-    fn white_pawn_at(&self, square: &Coords) -> bool {
-        bit_at_nth(self.white_pawns, square.to_square_number())
+    fn white_pawn_at(&self, square_number: usize) -> bool {
+        bit_at_nth(self.white_pawns, square_number)
     }
 
     pub fn initial() -> Board {
@@ -538,7 +541,7 @@ mod tests {
 
     #[test]
     fn black_rook_in_a8_in_initial_position() {
-        assert!(Board::initial().black_rook_at(&Coords::from_algebraic("a8")))
+        assert!(Board::initial().black_rook_at(Coords::from_algebraic("a8").to_square_number()))
     }
 
     #[test]
@@ -551,6 +554,6 @@ mod tests {
             },
             Coords::from_algebraic("e1"),
         );
-        assert!(board.white_king_at(&Coords::from_algebraic("e1")));
+        assert!(board.white_king_at(Coords::from_algebraic("e1").to_square_number()));
     }
 }
