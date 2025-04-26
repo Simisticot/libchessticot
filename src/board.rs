@@ -1,3 +1,6 @@
+use std::ops::BitAnd;
+use std::ops::Not;
+
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
