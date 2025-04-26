@@ -5,6 +5,18 @@ use std::ops::BitOr;
 use std::ops::BitXor;
 use std::ops::Not;
 
+pub struct Square(pub u8);
+
+impl Square {
+    pub fn rank(&self) -> u8 {
+        self.0.div_euclid(8) + 1
+    }
+
+    pub fn file(&self) -> u8 {
+        self.0 % 8
+    }
+}
+
 #[derive(PartialEq)]
 pub struct BitBoard(pub u64);
 
@@ -53,15 +65,15 @@ impl Debug for BitBoard {
 }
 
 impl BitBoard {
-    pub fn from_square_number(square_number: u64) -> BitBoard {
+    pub fn from_square_number(square_number: u8) -> BitBoard {
         BitBoard(1 << square_number)
     }
 
-    pub fn occupied(self, square_number: u64) -> bool {
+    pub fn occupied(self, square_number: u8) -> bool {
         !((self & BitBoard::from_square_number(square_number)) == BitBoard(0))
     }
 
-    pub fn nth_rank(n: u64) -> BitBoard {
+    pub fn nth_rank(n: u8) -> BitBoard {
         assert!(n < 8);
         let mut board = BitBoard(0);
         let first = n * 8;
@@ -72,7 +84,7 @@ impl BitBoard {
         board
     }
 
-    pub fn nth_file(n: u64) -> BitBoard {
+    pub fn nth_file(n: u8) -> BitBoard {
         assert!(n < 8);
         let mut board = BitBoard(0);
         for rank in 0..=7 {
@@ -81,23 +93,23 @@ impl BitBoard {
         board
     }
 
-    pub fn significant_for_rook_in(rank: u64, file: u64) -> BitBoard {
+    pub fn significant_for_rook_in(square: Square) -> BitBoard {
         let mut edges = BitBoard(0);
-        if rank != 0 {
+        if square.rank() != 0 {
             edges = edges | BitBoard::nth_rank(0);
         }
-        if rank != 7 {
+        if square.rank() != 7 {
             edges = edges | BitBoard::nth_rank(7);
         }
-        if file != 0 {
+        if square.file() != 0 {
             edges = edges | BitBoard::nth_file(0);
         }
-        if file != 7 {
+        if square.file() != 7 {
             edges = edges | BitBoard::nth_file(7);
         }
         dbg!(&edges);
 
-        (BitBoard::nth_rank(rank) ^ BitBoard::nth_file(file)) & !edges
+        (BitBoard::nth_rank(square.rank()) ^ BitBoard::nth_file(square.file())) & !edges
     }
 }
 #[cfg(test)]
@@ -106,9 +118,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn debug_my_board() {
-        let bitboard = BitBoard::significant_for_rook_in(4, 3);
-        dbg!(bitboard);
-        panic!();
+    fn e4_is_4th_rank() {
+        assert_eq!(Square(28).rank(), 4);
+    }
+
+    #[test]
+    fn e1_is_first_rank() {
+        assert_eq!(Square(4).rank(), 1);
+    }
+
+    #[test]
+    fn e4_is_4th_file() {
+        assert_eq!(Square(28).file(), 4);
+    }
+
+    #[test]
+    fn f4_is_3rd_file() {
+        assert_eq!(Square(27).file(), 3);
     }
 }
