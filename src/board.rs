@@ -179,24 +179,24 @@ impl Board {
     }
 
     pub fn put_piece_at(&mut self, piece: Piece, loc: Coords) {
-        let square_number = loc.to_square_number() as u32;
+        let mask = 1_u64 << loc.to_square_number();
         self.clear_square(&loc);
         match piece.color {
             PieceColor::Black => match piece.kind {
-                PieceKind::Rook => self.black_rooks |= 2_u64.pow(square_number),
-                PieceKind::Knight => self.black_knights |= 2_u64.pow(square_number),
-                PieceKind::Bishop => self.black_bishops |= 2_u64.pow(square_number),
-                PieceKind::Queen => self.black_queens |= 2_u64.pow(square_number),
-                PieceKind::King => self.black_kings |= 2_u64.pow(square_number),
-                PieceKind::Pawn => self.black_pawns |= 2_u64.pow(square_number),
+                PieceKind::Rook => self.black_rooks |= mask,
+                PieceKind::Knight => self.black_knights |= mask,
+                PieceKind::Bishop => self.black_bishops |= mask,
+                PieceKind::Queen => self.black_queens |= mask,
+                PieceKind::King => self.black_kings |= mask,
+                PieceKind::Pawn => self.black_pawns |= mask,
             },
             PieceColor::White => match piece.kind {
-                PieceKind::Rook => self.white_rooks |= 2_u64.pow(square_number),
-                PieceKind::Knight => self.white_knights |= 2_u64.pow(square_number),
-                PieceKind::Bishop => self.white_bishops |= 2_u64.pow(square_number),
-                PieceKind::Queen => self.white_queens |= 2_u64.pow(square_number),
-                PieceKind::King => self.white_kings |= 2_u64.pow(square_number),
-                PieceKind::Pawn => self.white_pawns |= 2_u64.pow(square_number),
+                PieceKind::Rook => self.white_rooks |= mask,
+                PieceKind::Knight => self.white_knights |= mask,
+                PieceKind::Bishop => self.white_bishops |= mask,
+                PieceKind::Queen => self.white_queens |= mask,
+                PieceKind::King => self.white_kings |= mask,
+                PieceKind::Pawn => self.white_pawns |= mask,
             },
         }
     }
