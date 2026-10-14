@@ -1,6 +1,7 @@
 use std::ops::BitAnd;
 use std::ops::Not;
 
+use crate::bitboard::Square;
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
@@ -31,6 +32,20 @@ fn clear_nth(number: &mut u64, n: usize) {
 }
 
 impl Board {
+    pub fn king_location(&self, color: &PieceColor) -> Option<Coords> {
+        let occupancy = match color {
+            PieceColor::Black => self.black_kings,
+            PieceColor::White => self.white_kings,
+        };
+        if occupancy == 0 {
+            None
+        } else {
+            Some(Coords::from_square_number(
+                occupancy.trailing_zeros() as usize
+            ))
+        }
+    }
+
     pub fn move_piece(&mut self, origin: Coords, dest: Coords) {
         if let Some(origin_piece) = self.take_piece_at(origin) {
             self.put_piece_at(origin_piece, dest);

@@ -677,19 +677,7 @@ impl Position {
         }
     }
     fn king_location(&self, color: &PieceColor) -> Option<Coords> {
-        for i in 0..8 {
-            for j in 0..8 {
-                let loc = Coords { y: i, x: j };
-                if self
-                    .board
-                    .piece_at(&loc)
-                    .is_some_and(|piece| piece.kind == PieceKind::King && piece.color == *color)
-                {
-                    return Some(loc);
-                }
-            }
-        }
-        None
+        self.board.king_location(color)
     }
     fn projected_movement(
         &self,
