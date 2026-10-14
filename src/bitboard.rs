@@ -4,7 +4,9 @@ use std::ops::BitAnd;
 use std::ops::BitOr;
 use std::ops::BitXor;
 use std::ops::Not;
+use std::ops::Shl;
 
+#[derive(PartialEq)]
 pub struct Square(pub u8);
 
 impl Square {
@@ -17,7 +19,7 @@ impl Square {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct BitBoard(pub u64);
 
 impl Not for BitBoard {
@@ -111,12 +113,74 @@ impl BitBoard {
 
         (BitBoard::nth_rank(square.rank()) ^ BitBoard::nth_file(square.file())) & !edges
     }
+
+    pub fn all_knight_moves() -> [BitBoard; 64] {
+        let mut moves = [BitBoard(0); 64];
+        (0..64).for_each(|square| moves[square] = BitBoard::knight_from(Square(square as u8)));
+        moves
+    }
+
+    pub fn knight_from(square: Square) -> BitBoard {
+        BitBoard((1 << square.0) << 17)
+            & if square.rank() < 6 && square.file() < 7 {
+                !BitBoard(0)
+            } else {
+                BitBoard(0)
+            }
+            | BitBoard((1 << square.0) << 15)
+                & if square.rank() < 6 && square.file() > 0 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) << 10)
+                & if square.rank() < 7 && square.file() < 6 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) << 6)
+                & if square.rank() < 7 && square.file() > 1 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) >> 17)
+                & if square.rank() > 1 && square.file() > 0 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) >> 15)
+                & if square.rank() > 1 && square.file() < 7 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) >> 10)
+                & if square.rank() > 0 && square.file() > 1 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+            | BitBoard((1 << square.0) >> 6)
+                & if square.rank() > 0 && square.file() < 6 {
+                    !BitBoard(0)
+                } else {
+                    BitBoard(0)
+                }
+    }
 }
 #[cfg(test)]
 mod tests {
 
     use super::*;
 
+    #[test]
+    fn showme() {
+        dbg!(BitBoard::all_knight_moves());
+        panic!();
+    }
     #[test]
     fn e4_is_4th_rank() {
         assert_eq!(Square(28).rank(), 4);
