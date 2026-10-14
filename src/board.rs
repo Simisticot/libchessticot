@@ -1,7 +1,3 @@
-use std::ops::BitAnd;
-use std::ops::Not;
-
-use crate::bitboard::Square;
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
@@ -32,6 +28,30 @@ fn clear_nth(number: &mut u64, n: usize) {
 }
 
 impl Board {
+    fn white_occupancy(&self) -> u64 {
+        self.white_rooks
+            | self.white_knights
+            | self.white_bishops
+            | self.white_queens
+            | self.white_kings
+            | self.white_pawns
+    }
+    fn black_occupancy(&self) -> u64 {
+        self.black_rooks
+            | self.black_knights
+            | self.black_bishops
+            | self.black_queens
+            | self.black_kings
+            | self.black_pawns
+    }
+
+    pub fn piece_count(&self, color: &PieceColor) -> usize {
+        let occupancy = match color {
+            PieceColor::Black => self.black_occupancy(),
+            PieceColor::White => self.white_occupancy(),
+        };
+        occupancy.count_ones() as usize
+    }
     pub fn king_location(&self, color: &PieceColor) -> Option<Coords> {
         let occupancy = match color {
             PieceColor::Black => self.black_kings,

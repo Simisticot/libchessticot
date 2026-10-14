@@ -179,7 +179,6 @@ mod tests {
     #[test]
     fn showme() {
         dbg!(BitBoard::all_knight_moves());
-        panic!();
     }
     #[test]
     fn e4_is_4th_rank() {

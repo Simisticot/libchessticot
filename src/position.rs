@@ -721,14 +721,7 @@ impl Position {
         squares
     }
     pub fn piece_count(&self, color: PieceColor) -> usize {
-        all_squares()
-            .iter()
-            .filter(|square| {
-                self.board
-                    .piece_at(square)
-                    .is_some_and(|piece| piece.color == color)
-            })
-            .count()
+        self.board.piece_count(&color)
     }
 
     pub fn is_stalemate(&self) -> bool {
@@ -1071,5 +1064,13 @@ mod tests {
     #[test]
     fn perft_3_is_197281() {
         assert_eq!(Position::initial().perft(3), 197281)
+    }
+
+    #[test]
+    fn counts_pieces() {
+        let position =
+            Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        assert_eq!(position.piece_count(PieceColor::Black), 16);
+        assert_eq!(position.piece_count(PieceColor::White), 16);
     }
 }
