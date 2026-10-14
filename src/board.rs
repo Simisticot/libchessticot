@@ -28,6 +28,9 @@ fn clear_nth(number: &mut u64, n: usize) {
 }
 
 impl Board {
+    fn full_occupancy(&self) -> u64 {
+        self.white_occupancy() | self.black_occupancy()
+    }
     fn white_occupancy(&self) -> u64 {
         self.white_rooks
             | self.white_knights
@@ -73,6 +76,9 @@ impl Board {
     }
     pub fn piece_at(&self, loc: &Coords) -> Option<Piece> {
         let square_number = loc.to_square_number();
+        if !bit_at_nth(self.full_occupancy(), square_number) {
+            return None;
+        }
         if self.black_rook_at(square_number) {
             Some(Piece {
                 kind: PieceKind::Rook,
