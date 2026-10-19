@@ -1,9 +1,21 @@
-use std::ops;
+use std::{fmt::Debug, ops};
 
-#[derive(Copy, Clone, PartialEq, Debug, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Coords {
     pub x: isize,
     pub y: isize,
+}
+
+impl Debug for Coords {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Coords: x={} y={} algebraic={}",
+            self.x,
+            self.y,
+            self.to_algebraic()
+        )
+    }
 }
 
 impl Coords {

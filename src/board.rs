@@ -1,4 +1,7 @@
+use crate::attack::ALL_DIRECTIONS;
+use crate::attack::ALL_RAYS;
 use crate::attack::KNIGHT_ATTACKS;
+use crate::attack::RISING;
 use crate::bitboard::BitBoard;
 use crate::Coords;
 use crate::Piece;
@@ -30,6 +33,34 @@ fn clear_nth(number: &mut BitBoard, n: usize) {
 }
 
 impl Board {
+    pub fn potential_queen_attacks(&self, square: &Coords) -> BitBoard {
+        let blockers = self.full_occupancy();
+        let mut potential_attackers = BitBoard::EMPTY;
+        for dir in ALL_DIRECTIONS {
+            let attacker_ray = ALL_RAYS[dir][square.to_square_number()];
+            let relevant_blockers = attacker_ray & blockers;
+            if relevant_blockers != BitBoard::EMPTY {
+                let relevant_blocker = if RISING[dir] {
+                    relevant_blockers.trailing_zeros()
+                } else {
+                    63 - relevant_blockers.leading_zeros()
+                };
+                let blocked_ray = ALL_RAYS[dir][relevant_blocker as usize];
+                let attacked_ray = attacker_ray & !blocked_ray;
+                potential_attackers |= attacked_ray;
+            } else {
+                potential_attackers |= attacker_ray;
+            }
+        }
+        potential_attackers
+    }
+    pub fn attacked_by_queens(&self, square: &Coords, attacker_color: &PieceColor) -> bool {
+        let attacker_queens = match attacker_color {
+            PieceColor::Black => self.black_queens,
+            PieceColor::White => self.white_queens,
+        };
+        self.potential_queen_attacks(square) & attacker_queens != BitBoard::EMPTY
+    }
     pub fn attacked_by_knight(&self, square: &Coords, attacker_color: &PieceColor) -> bool {
         let attacker_knights = match attacker_color {
             PieceColor::Black => self.black_knights,

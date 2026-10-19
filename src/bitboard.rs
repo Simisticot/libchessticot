@@ -1,4 +1,3 @@
-use std::char;
 use std::fmt::Debug;
 use std::ops::BitAnd;
 use std::ops::BitAndAssign;
@@ -55,16 +54,15 @@ impl BitXor for BitBoard {
 
 impl Debug for BitBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let integer = self.0;
-        let bits = format!("{integer:064b}");
-        let ranks = bits
-            .chars()
-            .collect::<Vec<char>>()
-            .chunks(8)
-            .map(|rank| rank.iter().collect::<String>())
-            .collect::<Vec<String>>()
-            .join("\n");
-        write!(f, "\n{ranks}")
+        writeln!(f)?;
+        for y in 0..8 {
+            for x in 0..8 {
+                let bit = y * 8 + x;
+                write!(f, "{}", (self.0 >> bit) & 1)?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 

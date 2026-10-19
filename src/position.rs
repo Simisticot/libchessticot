@@ -330,33 +330,30 @@ impl Position {
                     .is_some_and(|piece| piece.kind == PieceKind::King && &piece.color == by),
                 _ => false,
             });
-        let attacked_by_rook_or_queen: bool =
+        let attacked_by_rook: bool =
             self.rook_from(square, &by.opposite())
                 .iter()
                 .any(|chess_move| match chess_move {
                     ChessMove::RegularMove(movement) => self
                         .board
                         .piece_at(&movement.destination)
-                        .is_some_and(|piece| {
-                            (piece.kind == PieceKind::Rook || piece.kind == PieceKind::Queen)
-                                && &piece.color == by
-                        }),
+                        .is_some_and(|piece| (piece.kind == PieceKind::Rook) && &piece.color == by),
                     _ => false,
                 });
 
-        let attacked_by_bishop_or_queen: bool = self
-            .bishop_from(square, &by.opposite())
-            .iter()
-            .any(|chess_move| match chess_move {
-                ChessMove::RegularMove(movement) => self
-                    .board
-                    .piece_at(&movement.destination)
-                    .is_some_and(|piece| {
-                        (piece.kind == PieceKind::Bishop || piece.kind == PieceKind::Queen)
-                            && &piece.color == by
-                    }),
-                _ => false,
-            });
+        let attacked_by_bishop: bool =
+            self.bishop_from(square, &by.opposite())
+                .iter()
+                .any(|chess_move| match chess_move {
+                    ChessMove::RegularMove(movement) => self
+                        .board
+                        .piece_at(&movement.destination)
+                        .is_some_and(|piece| {
+                            (piece.kind == PieceKind::Bishop) && &piece.color == by
+                        }),
+                    _ => false,
+                });
+        let attacked_by_queen: bool = self.board.attacked_by_queens(square, by);
         let attacked_by_knight: bool = self.board.attacked_by_knight(square, by);
 
         let attacked_by_pawn: bool = self.attacked_by_pawn(square, by);
@@ -377,9 +374,10 @@ impl Position {
         attacked_by_knight
             || attacked_by_pawn
             || attacked_en_passant
-            || attacked_by_bishop_or_queen
-            || attacked_by_rook_or_queen
+            || attacked_by_bishop
+            || attacked_by_rook
             || attacked_by_king
+            || attacked_by_queen
     }
 
     fn attacked_by_pawn(&self, square: &Coords, attacking_color: &PieceColor) -> bool {
