@@ -1,3 +1,4 @@
+mod attack;
 mod bitboard;
 mod board;
 mod chess_move;
@@ -6,6 +7,7 @@ mod engine;
 mod piece;
 mod player;
 mod position;
+mod square;
 mod uci_long;
 
 use core::panic;

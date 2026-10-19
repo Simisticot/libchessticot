@@ -1,3 +1,5 @@
+use crate::attack::KNIGHT_ATTACKS;
+use crate::bitboard::BitBoard;
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
@@ -5,33 +7,41 @@ use crate::PieceKind;
 
 #[derive(Clone, PartialEq)]
 pub struct Board {
-    black_rooks: u64,
-    black_knights: u64,
-    black_bishops: u64,
-    black_queens: u64,
-    black_kings: u64,
-    black_pawns: u64,
-    white_rooks: u64,
-    white_knights: u64,
-    white_bishops: u64,
-    white_queens: u64,
-    white_kings: u64,
-    white_pawns: u64,
+    black_rooks: BitBoard,
+    black_knights: BitBoard,
+    black_bishops: BitBoard,
+    black_queens: BitBoard,
+    black_kings: BitBoard,
+    black_pawns: BitBoard,
+    white_rooks: BitBoard,
+    white_knights: BitBoard,
+    white_bishops: BitBoard,
+    white_queens: BitBoard,
+    white_kings: BitBoard,
+    white_pawns: BitBoard,
 }
 
-fn bit_at_nth(number: u64, n: usize) -> bool {
-    ((1 << n) & number) > 0
+fn bit_at_nth(board: BitBoard, n: usize) -> bool {
+    !(board & BitBoard(1 << n)).is_empty()
 }
 
-fn clear_nth(number: &mut u64, n: usize) {
-    *number &= !(1 << n)
+fn clear_nth(number: &mut BitBoard, n: usize) {
+    *number &= !BitBoard(1 << n)
 }
 
 impl Board {
-    fn full_occupancy(&self) -> u64 {
+    pub fn attacked_by_knight(&self, square: &Coords, attacker_color: &PieceColor) -> bool {
+        let attacker_knights = match attacker_color {
+            PieceColor::Black => self.black_knights,
+            PieceColor::White => self.white_knights,
+        };
+        let potential_attackers = KNIGHT_ATTACKS[square.to_square_number()];
+        potential_attackers & attacker_knights != BitBoard::EMPTY
+    }
+    fn full_occupancy(&self) -> BitBoard {
         self.white_occupancy() | self.black_occupancy()
     }
-    fn white_occupancy(&self) -> u64 {
+    fn white_occupancy(&self) -> BitBoard {
         self.white_rooks
             | self.white_knights
             | self.white_bishops
@@ -39,7 +49,7 @@ impl Board {
             | self.white_kings
             | self.white_pawns
     }
-    fn black_occupancy(&self) -> u64 {
+    fn black_occupancy(&self) -> BitBoard {
         self.black_rooks
             | self.black_knights
             | self.black_bishops
@@ -60,7 +70,7 @@ impl Board {
             PieceColor::Black => self.black_kings,
             PieceColor::White => self.white_kings,
         };
-        if occupancy == 0 {
+        if occupancy.is_empty() {
             None
         } else {
             Some(Coords::from_square_number(
@@ -179,7 +189,7 @@ impl Board {
     }
 
     pub fn put_piece_at(&mut self, piece: Piece, loc: Coords) {
-        let mask = 1_u64 << loc.to_square_number();
+        let mask = BitBoard(1_u64 << loc.to_square_number());
         self.clear_square(&loc);
         match piece.color {
             PieceColor::Black => match piece.kind {
@@ -241,35 +251,35 @@ impl Board {
 
     pub fn initial() -> Board {
         Board {
-            black_rooks: (2_u64.pow(0)) + (2_u64.pow(7)),
-            black_knights: (2_u64.pow(1)) + (2_u64.pow(6)),
-            black_bishops: (2_u64.pow(2)) + (2_u64.pow(5)),
-            black_queens: 2_u64.pow(3),
-            black_kings: 2_u64.pow(4),
-            black_pawns: { (8..=15).map(|number| 2_u64.pow(number)).sum() },
-            white_rooks: (2_u64.pow(56)) + (2_u64.pow(63)),
-            white_knights: (2_u64.pow(57)) + (2_u64.pow(62)),
-            white_bishops: (2_u64.pow(58)) + (2_u64.pow(61)),
-            white_queens: (2_u64.pow(59)),
-            white_kings: (2_u64.pow(60)),
-            white_pawns: { (48..=55).map(|number| 2_u64.pow(number)).sum() },
+            black_rooks: BitBoard((2_u64.pow(0)) + (2_u64.pow(7))),
+            black_knights: BitBoard((2_u64.pow(1)) + (2_u64.pow(6))),
+            black_bishops: BitBoard((2_u64.pow(2)) + (2_u64.pow(5))),
+            black_queens: BitBoard(2_u64.pow(3)),
+            black_kings: BitBoard(2_u64.pow(4)),
+            black_pawns: BitBoard((8..=15).map(|number| 2_u64.pow(number)).sum()),
+            white_rooks: BitBoard((2_u64.pow(56)) + (2_u64.pow(63))),
+            white_knights: BitBoard((2_u64.pow(57)) + (2_u64.pow(62))),
+            white_bishops: BitBoard((2_u64.pow(58)) + (2_u64.pow(61))),
+            white_queens: BitBoard(2_u64.pow(59)),
+            white_kings: BitBoard(2_u64.pow(60)),
+            white_pawns: BitBoard((48..=55).map(|number| 2_u64.pow(number)).sum()),
         }
     }
 
     pub fn empty() -> Board {
         Board {
-            black_rooks: 0,
-            black_knights: 0,
-            black_bishops: 0,
-            black_queens: 0,
-            black_kings: 0,
-            black_pawns: 0,
-            white_rooks: 0,
-            white_knights: 0,
-            white_bishops: 0,
-            white_queens: 0,
-            white_kings: 0,
-            white_pawns: 0,
+            black_rooks: BitBoard::EMPTY,
+            black_knights: BitBoard::EMPTY,
+            black_bishops: BitBoard::EMPTY,
+            black_queens: BitBoard::EMPTY,
+            black_kings: BitBoard::EMPTY,
+            black_pawns: BitBoard::EMPTY,
+            white_rooks: BitBoard::EMPTY,
+            white_knights: BitBoard::EMPTY,
+            white_bishops: BitBoard::EMPTY,
+            white_queens: BitBoard::EMPTY,
+            white_kings: BitBoard::EMPTY,
+            white_pawns: BitBoard::EMPTY,
         }
     }
 
@@ -534,53 +544,53 @@ mod tests {
 
     #[test]
     fn first_bit_in_1_is_set() {
-        assert!(bit_at_nth(1, 0))
+        assert!(bit_at_nth(BitBoard(1), 0))
     }
 
     #[test]
     fn fourth_bit_in_1_is_not_set() {
-        assert!(!bit_at_nth(1, 3))
+        assert!(!bit_at_nth(BitBoard(1), 3))
     }
 
     #[test]
     fn second_bit_in_3_is_set() {
-        assert!(bit_at_nth(3, 1))
+        assert!(bit_at_nth(BitBoard(3), 1))
     }
 
     #[test]
     fn third_bit_in_3_is_not_set() {
-        assert!(!bit_at_nth(3, 2))
+        assert!(!bit_at_nth(BitBoard(3), 2))
     }
 
     #[test]
     fn fourth_bit_in_31_is_set() {
-        assert!(bit_at_nth(31, 3))
+        assert!(bit_at_nth(BitBoard(31), 3))
     }
 
     #[test]
     fn fourth_bit_in_32_is_not_set() {
-        assert!(!bit_at_nth(32, 3))
+        assert!(!bit_at_nth(BitBoard(32), 3))
     }
 
     #[test]
     fn clear_sixth_32_is_0() {
-        let mut number = 32;
+        let mut number = BitBoard(32);
         clear_nth(&mut number, 5);
-        assert_eq!(number, 0);
+        assert_eq!(number, BitBoard::EMPTY);
     }
 
     #[test]
     fn clear_first_1_is_0() {
-        let mut number = 1;
+        let mut number = BitBoard(1);
         clear_nth(&mut number, 0);
-        assert_eq!(number, 0);
+        assert_eq!(number, BitBoard::EMPTY);
     }
 
     #[test]
     fn clear_seventh_0_is_0() {
-        let mut number = 0;
+        let mut number = BitBoard::EMPTY;
         clear_nth(&mut number, 6);
-        assert_eq!(number, 0);
+        assert_eq!(number, BitBoard::EMPTY);
     }
 
     #[test]

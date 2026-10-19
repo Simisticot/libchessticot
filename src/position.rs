@@ -357,16 +357,7 @@ impl Position {
                     }),
                 _ => false,
             });
-        let attacked_by_knight: bool =
-            self.knight_from(square, &by.opposite())
-                .iter()
-                .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => self
-                        .board
-                        .piece_at(&movement.destination)
-                        .is_some_and(|piece| piece.kind == PieceKind::Knight && &piece.color == by),
-                    _ => false,
-                });
+        let attacked_by_knight: bool = self.board.attacked_by_knight(square, by);
 
         let attacked_by_pawn: bool = self.attacked_by_pawn(square, by);
         let attacked_en_passant: bool = self
