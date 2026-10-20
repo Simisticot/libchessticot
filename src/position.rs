@@ -330,29 +330,9 @@ impl Position {
                     .is_some_and(|piece| piece.kind == PieceKind::King && &piece.color == by),
                 _ => false,
             });
-        let attacked_by_rook: bool =
-            self.rook_from(square, &by.opposite())
-                .iter()
-                .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => self
-                        .board
-                        .piece_at(&movement.destination)
-                        .is_some_and(|piece| (piece.kind == PieceKind::Rook) && &piece.color == by),
-                    _ => false,
-                });
 
-        let attacked_by_bishop: bool =
-            self.bishop_from(square, &by.opposite())
-                .iter()
-                .any(|chess_move| match chess_move {
-                    ChessMove::RegularMove(movement) => self
-                        .board
-                        .piece_at(&movement.destination)
-                        .is_some_and(|piece| {
-                            (piece.kind == PieceKind::Bishop) && &piece.color == by
-                        }),
-                    _ => false,
-                });
+        let attacked_by_rook: bool = self.board.attacked_by_rooks(square, by);
+        let attacked_by_bishop: bool = self.board.attacked_by_bishops(square, by);
         let attacked_by_queen: bool = self.board.attacked_by_queens(square, by);
         let attacked_by_knight: bool = self.board.attacked_by_knight(square, by);
 

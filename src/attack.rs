@@ -2,8 +2,8 @@ use crate::bitboard::BitBoard;
 use crate::square::Square;
 
 pub const ALL_DIRECTIONS: [usize; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
-pub const INTERCARDINALS: [usize; 4] = [0, 1, 2, 3];
-pub const CARDINALS: [usize; 4] = [4, 5, 6, 7];
+pub const CARDINALS: [usize; 4] = [0, 1, 2, 3];
+pub const INTERCARDINALS: [usize; 4] = [4, 5, 6, 7];
 
 pub const ALL_RAYS: [[BitBoard; 64]; 8] = all_rays();
 
