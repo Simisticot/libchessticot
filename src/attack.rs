@@ -20,6 +20,47 @@ pub const DIRECTIONS: [(isize, isize); 8] = [
     (-1, 1),  // up right
 ];
 
+pub const ALL_PAWN_ATTACKS: [[BitBoard; 64]; 2] = all_pawn_attacks();
+
+const fn all_pawn_attacks() -> [[BitBoard; 64]; 2] {
+    let mut pawn_attacks = [[0_u64; 64]; 2];
+    let mut square = 0;
+    let mut dir = 0;
+    let mut color = 0;
+    let directions = [
+        [DIRECTIONS[4], DIRECTIONS[7]],
+        [DIRECTIONS[5], DIRECTIONS[6]],
+    ];
+    while color < 2 {
+        while square < 64 {
+            while dir < 2 {
+                let (dx, dy) = directions[color][dir];
+                let (x, y) = (((square % 8) as isize + dx), ((square / 8) as isize + dy));
+                if x < 8 && x >= 0 && y < 8 && y >= 0 {
+                    pawn_attacks[color][square] |= 1_u64 << (x + y * 8);
+                }
+                dir += 1;
+            }
+            dir = 0;
+            square += 1;
+        }
+        square = 0;
+        color += 1;
+    }
+    let mut boards = [[BitBoard::EMPTY; 64]; 2];
+    color = 0;
+    square = 0;
+    while color < 2 {
+        while square < 64 {
+            boards[color][square] = BitBoard(pawn_attacks[color][square]);
+            square += 1;
+        }
+        square = 0;
+        color += 1;
+    }
+    boards
+}
+
 pub const ALL_KING_ATTACKS: [BitBoard; 64] = all_circles();
 
 const fn all_circles() -> [BitBoard; 64] {

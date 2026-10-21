@@ -325,8 +325,8 @@ impl Position {
         let attacked_by_bishop: bool = self.board.attacked_by_bishops(square, by);
         let attacked_by_queen: bool = self.board.attacked_by_queens(square, by);
         let attacked_by_knight: bool = self.board.attacked_by_knight(square, by);
+        let attacked_by_pawn: bool = self.board.attacked_by_pawns(square, by);
 
-        let attacked_by_pawn: bool = self.attacked_by_pawn(square, by);
         let attacked_en_passant: bool = self
             .board
             .piece_at(square)
@@ -338,7 +338,7 @@ impl Position {
                             dx: 0,
                             dy: by.pawn_orientation(),
                         }
-                    && self.attacked_by_pawn(&en_passant_on, by)
+                    && self.board.attacked_by_pawns(&en_passant_on, by)
             });
 
         attacked_by_knight
@@ -348,17 +348,6 @@ impl Position {
             || attacked_by_rook
             || attacked_by_king
             || attacked_by_queen
-    }
-
-    fn attacked_by_pawn(&self, square: &Coords, attacking_color: &PieceColor) -> bool {
-        Position::pawn_attacked_squares(square, &attacking_color.opposite())
-            .iter()
-            .any(|attacking_square| {
-                attacking_square.is_in_bounds()
-                    && self.board.piece_at(attacking_square).is_some_and(|piece| {
-                        piece.kind == PieceKind::Pawn && &piece.color == attacking_color
-                    })
-            })
     }
 
     fn is_in_check(&self, color: &PieceColor) -> bool {
