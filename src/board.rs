@@ -1,10 +1,12 @@
 use crate::attack::ALL_DIRECTIONS;
+use crate::attack::ALL_KING_ATTACKS;
 use crate::attack::ALL_RAYS;
 use crate::attack::CARDINALS;
 use crate::attack::INTERCARDINALS;
 use crate::attack::KNIGHT_ATTACKS;
 use crate::attack::RISING;
 use crate::bitboard::BitBoard;
+use crate::square;
 use crate::Coords;
 use crate::Piece;
 use crate::PieceColor;
@@ -69,6 +71,16 @@ impl Board {
 
     pub fn potential_queen_attacks(&self, square: &Coords) -> BitBoard {
         self.potential_slider_attacks(square, &ALL_DIRECTIONS)
+    }
+    pub fn potential_king_attacks(&self, square: &Coords) -> BitBoard {
+        ALL_KING_ATTACKS[square.to_square_number()]
+    }
+    pub fn attacked_by_kings(&self, square: &Coords, attacker_color: &PieceColor) -> bool {
+        let attacker_kings = match attacker_color {
+            PieceColor::Black => self.black_kings,
+            PieceColor::White => self.white_kings,
+        };
+        self.potential_king_attacks(square) & attacker_kings != BitBoard::EMPTY
     }
     pub fn attacked_by_queens(&self, square: &Coords, attacker_color: &PieceColor) -> bool {
         let attacker_queens = match attacker_color {
@@ -513,7 +525,7 @@ impl Board {
 
 #[cfg(test)]
 mod tests {
-    use crate::all_squares;
+    use crate::{all_squares, Position};
 
     use super::*;
 

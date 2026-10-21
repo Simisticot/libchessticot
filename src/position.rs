@@ -320,17 +320,7 @@ impl Position {
         self.legal_moves_from_origin(&origin).contains(chess_move)
     }
     pub fn is_attacked_by(&self, by: &PieceColor, square: &Coords) -> bool {
-        let attacked_by_king: bool = self
-            .projected_movement(square, eight_degrees(), &by.opposite())
-            .iter()
-            .any(|chess_move| match chess_move {
-                ChessMove::RegularMove(movement) => self
-                    .board
-                    .piece_at(&movement.destination)
-                    .is_some_and(|piece| piece.kind == PieceKind::King && &piece.color == by),
-                _ => false,
-            });
-
+        let attacked_by_king: bool = self.board.attacked_by_kings(square, by);
         let attacked_by_rook: bool = self.board.attacked_by_rooks(square, by);
         let attacked_by_bishop: bool = self.board.attacked_by_bishops(square, by);
         let attacked_by_queen: bool = self.board.attacked_by_queens(square, by);
@@ -838,14 +828,14 @@ mod tests {
     #[test]
     fn detects_cardinal_king_attack() {
         let position = Position::from_fen("8/8/8/8/8/2k5/2K5/8 w - - 0 1");
-        let white_king_location = Coords { y: 6, x: 2 };
+        let white_king_location = Coords::from_algebraic("c2");
         assert!(position.is_attacked_by(&PieceColor::Black, &white_king_location));
     }
 
     #[test]
     fn detects_diagonal_king_attack() {
         let position = Position::from_fen("8/8/8/8/8/3k4/2K5/8 w - - 0 1");
-        let white_king_location = Coords { y: 6, x: 2 };
+        let white_king_location = Coords::from_algebraic("c2");
         assert!(position.is_attacked_by(&PieceColor::Black, &white_king_location));
     }
 

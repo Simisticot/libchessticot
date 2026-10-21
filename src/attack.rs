@@ -20,6 +20,33 @@ pub const DIRECTIONS: [(isize, isize); 8] = [
     (-1, 1),  // up right
 ];
 
+pub const ALL_KING_ATTACKS: [BitBoard; 64] = all_circles();
+
+const fn all_circles() -> [BitBoard; 64] {
+    let mut circles = [0_u64; 64];
+    let mut square = 0;
+    let mut dir = 0;
+    while square < 64 {
+        while dir < 8 {
+            let (dx, dy) = DIRECTIONS[dir];
+            let (x, y) = (((square % 8) as isize + dx), ((square / 8) as isize + dy));
+            if x < 8 && x >= 0 && y < 8 && y >= 0 {
+                circles[square] |= 1_u64 << (x + y * 8);
+            }
+            dir += 1;
+        }
+        dir = 0;
+        square += 1;
+    }
+    let mut boards = [BitBoard::EMPTY; 64];
+    square = 0;
+    while square < 64 {
+        boards[square] = BitBoard(circles[square]);
+        square += 1;
+    }
+    boards
+}
+
 const fn all_rays() -> [[BitBoard; 64]; 8] {
     let mut rays = [[0_u64; 64]; 8];
     let mut dir = 0;
